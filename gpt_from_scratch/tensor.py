@@ -51,12 +51,21 @@ class Tensor:
                 for k in range(m): 
                     c[i][j] += self.data[i][k]*other.data[k][j]
         return Tensor(c)
+    
+    def tolist(self) -> Union[list, float]: 
+        if len(self.data) == 1 and not isinstance(self.data[0], list): 
+            return self.data[0]
+        return self.data
 
 
-def _zeros_list(*shape: int) -> list: 
+def _num_list(*shape: int, num: int) -> list: 
     if len(shape) == 1: 
-        return shape[0] * [0]
-    return shape[0] * [_zeros_list(*shape[1:])]
+        return shape[0] * [num]
+    return shape[0] * [_num_list(*shape[1:])]
 
 def zeros(*shape: int) -> Tensor: 
-    return Tensor(_zeros_list(*shape))
+    return Tensor(_num_list(*shape, 0))
+
+def ones(*shape: int) -> Tensor:
+    return Tensor(_num_list(*shape, 1))
+
