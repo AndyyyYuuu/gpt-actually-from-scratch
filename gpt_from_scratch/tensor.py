@@ -1,4 +1,4 @@
-
+from typing import Self 
 
 
 class Tensor:
@@ -7,7 +7,6 @@ class Tensor:
         self.shape = self._detect_shape(data)
         self.data = data
 
-    
     def _detect_shape(self, data): 
         shape = []
         depth_data = data
@@ -17,11 +16,14 @@ class Tensor:
                 break
             depth_data = depth_data[0]
         return tuple(shape)
+
+    def shape(self) -> tuple: 
+        return self.shape
     
-    def __repr__(self): 
+    def __repr__(self) -> str: 
         return f"Tensor(shape={self.shape}, data={self.data})"
     
-    def __eq__(self, other): 
+    def __eq__(self, other) -> bool: 
         return self._data_eq(self.data, other.data)
     
     @staticmethod
@@ -33,7 +35,7 @@ class Tensor:
         else: 
             return all([data1[i] == data2[i] for i in range(len(data1))])
     
-    def __matmul__(self, other):
+    def __matmul__(self, other) -> Self:
         
         if len(self.data[0]) != len(other.data): 
             if len(other.data[0]) == len(self.data): 
@@ -49,3 +51,12 @@ class Tensor:
                 for k in range(m): 
                     c[i][j] += self.data[i][k]*other.data[k][j]
         return Tensor(c)
+
+
+def _zeros_list(*shape) -> list: 
+    if len(shape) == 1: 
+        return shape[0] * [0]
+    return shape[0] * [_zeros_list(*shape[1:])]
+
+def zeros(*shape): 
+    return Tensor(_zeros_list(*shape))

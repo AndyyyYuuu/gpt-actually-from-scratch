@@ -1,5 +1,5 @@
 import unittest
-from gpt_from_scratch.ops import Tensor
+from gpt_from_scratch.tensor import *
 
 
 class TestTensorMatMul(unittest.TestCase):
@@ -30,6 +30,4 @@ class TestTensorMatMul(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = a @ b
 
-
-if __name__ == '__main__':
-    unittest.main()
+print(zeros(3, 2, 3))
