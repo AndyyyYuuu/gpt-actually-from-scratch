@@ -2,11 +2,38 @@ from typing import Self, Union
 
 
 class Tensor:
-    
-    def __init__(self, data: list) -> None:
-        self.shape = self._detect_shape(data)
-        self.data = data
 
+    def __init__(self, tensor: Self): 
+        self.size = tensor.size
+        self.data = tensor.data
+        self.stride = tensor.stride
+        
+
+    def __init__(self, data: list) -> None:
+        self.size = self._detect_shape(data)
+        self.data = _flatten_list(data)
+        self.stride = self._get_stride()
+        print(self.stride)
+    
+    def __getitem__(self, index: list) -> float: 
+        flat_index = sum([i*j for i, j in zip(reversed(self.stride), index)])
+        return self.data[flat_index]
+
+    def __setitem__(self, index: list, value) -> None: 
+        flat_index = sum([i*j for i, j in zip(reversed(self.stride), index)])
+        self.data[flat_index] = value
+
+    
+    def _get_stride(self): 
+        stride = [1]*len(self.size)
+        for i in range(len(self.size)-1, 0, -1): 
+            stride[i-1] = self.size[i]*stride[i]
+        return tuple(reversed(stride))
+    
+    
+
+    
+    
     def _detect_shape(self, data: list) -> tuple: 
         shape = []
         depth_data = data
@@ -18,16 +45,15 @@ class Tensor:
         return tuple(shape)
 
     def shape(self) -> tuple: 
-        return self.shape
+        return self.size
     
     def __repr__(self) -> str: 
-        return f"Tensor(shape={self.shape}, data={self.data})"
-    
-    def __eq__(self, other: Self) -> bool: 
-        return self._data_eq(self.data, other.data)
+        return f"Tensor(shape={self.shape()}, data={self.data})"
+        
     
     @staticmethod
     def _data_eq(data1: list, data2: list) -> bool: 
+        
         if len(data1) != len(data2): 
             return False
         if isinstance(data1[0], (list, tuple)): 
@@ -37,35 +63,55 @@ class Tensor:
     
     def __matmul__(self, other: Self) -> Self:
         
-        if len(self.data[0]) != len(other.data): 
-            if len(other.data[0]) == len(self.data): 
+        if self.size[1] != other.size[0]: 
+            if other.size[1] == self.size[0]: 
                 self, other = other, self
             else: 
                 raise ValueError("The number of columns in the first matrix must equal the number of rows in the second")
-        n = len(self.data)
-        m = len(other.data)
-        p = len(other.data[0])
-        c = [[0]*p for i in range(n)]
+        n = self.size[0]
+        m = other.size[0]
+        p = other.size[1]
+        c = zeros(n, p)
         for i in range(n): 
             for j in range(p): 
                 for k in range(m): 
-                    c[i][j] += self.data[i][k]*other.data[k][j]
+                    print(self[i,k], other[k,j])
+                    c[i,j] += self[i,k]*other[k,j]
+                    
         return Tensor(c)
     
     def tolist(self) -> Union[list, float]: 
         if len(self.data) == 1 and not isinstance(self.data[0], list): 
             return self.data[0]
         return self.data
+    
+    def transpose(self, dim1: int, dim2: int) -> None: 
+        self.size[dim1], self.size[dim2] = self.size[dim2], self.size[dim2]
+    
 
+def _flatten_list(data: list): 
+    if isinstance(data, list) and len(data) != 0 and isinstance(data[0], list): 
+        data = sum([_flatten_list(i) for i in data], start=[])
+    return data
 
-def _num_list(*shape: int, num: int) -> list: 
+def flatten(self, tensor: Tensor) -> Tensor: 
+    flat_tensor = Tensor(tensor)
+    prod = 1
+    for i in self.stride: 
+        prod*=i
+    flat_tensor.shape = (prod,)
+    flat_tensor.stride = (1,)
+    return flat_tensor
+
+def _num_list(shape: Union[tuple, list], num: int) -> list: 
     if len(shape) == 1: 
         return shape[0] * [num]
-    return shape[0] * [_num_list(*shape[1:])]
+    return shape[0] * [_num_list(shape[1:], num)]
 
-def zeros(*shape: int) -> Tensor: 
-    return Tensor(_num_list(*shape, 0))
+def zeros(*shape: Union[tuple, list]) -> Tensor: 
+    return Tensor(_num_list(shape, num=0))
 
-def ones(*shape: int) -> Tensor:
-    return Tensor(_num_list(*shape, 1))
+def ones(*shape: Union[tuple, list]) -> Tensor:
+    return Tensor(_num_list(shape, num=1))
+
 

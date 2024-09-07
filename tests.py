@@ -30,4 +30,7 @@ class TestTensorMatMul(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = a @ b
 
-print(zeros(3, 2, 3))
+unittest.main()
+#print(zeros(3, 4, 5))
+#print(Tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]).transpose(0, 1))
+#print(Tensor._flatten_list([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
