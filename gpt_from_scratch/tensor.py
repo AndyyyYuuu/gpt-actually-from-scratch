@@ -25,12 +25,13 @@ class Tensor:
 
     
     def _get_stride(self): 
-        stride = [1]*len(self.size)
-        for i in range(len(self.size)-1, 0, -1): 
+        stride = [1]*self.size.dim()
+        for i in range(self.size.dim()-1, 0, -1): 
             stride[i-1] = self.size[i]*stride[i]
         return tuple(reversed(stride))
     
-    
+    def __eq__(self, other): 
+        return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
 
     
     
@@ -42,7 +43,7 @@ class Tensor:
             if len(depth_data) == 0: 
                 break
             depth_data = depth_data[0]
-        return tuple(shape)
+        return Size(*shape)
 
     def shape(self) -> tuple: 
         return self.size
@@ -78,7 +79,7 @@ class Tensor:
                     print(self[i,k], other[k,j])
                     c[i,j] += self[i,k]*other[k,j]
                     
-        return Tensor(c)
+        return c
     
     def tolist(self) -> Union[list, float]: 
         if len(self.data) == 1 and not isinstance(self.data[0], list): 
@@ -87,7 +88,7 @@ class Tensor:
     
     def transpose(self, dim1: int, dim2: int) -> None: 
         self.size[dim1], self.size[dim2] = self.size[dim2], self.size[dim2]
-    
+
 
 def _flatten_list(data: list): 
     if isinstance(data, list) and len(data) != 0 and isinstance(data[0], list): 
@@ -104,7 +105,7 @@ def flatten(self, tensor: Tensor) -> Tensor:
     return flat_tensor
 
 def _num_list(shape: Union[tuple, list], num: int) -> list: 
-    if len(shape) == 1: 
+    if shape.dim() == 1: 
         return shape[0] * [num]
     return shape[0] * [_num_list(shape[1:], num)]
 
@@ -115,3 +116,30 @@ def ones(*shape: Union[tuple, list]) -> Tensor:
     return Tensor(_num_list(shape, num=1))
 
 
+class Size: 
+    def __init__(self, *sizes: tuple) -> None: 
+        self.data = sizes
+    
+    def __eq__(self, other: Union[Self, int]) -> bool: 
+
+        if self.dim() != other.dim(): 
+            return False
+        return all([i == j for i, j in zip(self, other)])
+    
+    def __ne__(self, other: Self) -> bool: 
+        return not self == other
+    
+    def __getitem__(self, dim: int) -> int: 
+        return self.data[dim]
+    
+    def __repr__(self): 
+        return f"Size({str(self.data)})"
+    
+    def total(self): 
+        prod = 1
+        for i in self.data: 
+            prod *= i
+        return prod
+    
+    def dim(self): 
+        return len(self.data)
