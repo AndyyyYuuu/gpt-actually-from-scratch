@@ -30,6 +30,4 @@ class TestTensorMatMul(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = a @ b
 
-
-
 unittest.main()

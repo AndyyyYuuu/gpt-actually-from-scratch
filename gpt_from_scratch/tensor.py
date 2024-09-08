@@ -29,11 +29,6 @@ class Tensor:
             stride[i-1] = self.size[i]*stride[i]
         return stride
     
-    def __eq__(self, other): 
-        return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
-
-    def __add__
-    
     def _detect_shape(self, data: list) -> tuple: 
         shape = []
         depth_data = data
@@ -49,6 +44,46 @@ class Tensor:
     
     def __repr__(self) -> str: 
         return f"Tensor(shape={self.shape()}, data={self.tolist()})"
+    
+    def __eq__(self, other: Self) -> bool: 
+        return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
+
+    def __add__(self, other: Self) -> Self: 
+        if isinstance(other, Tensor): 
+            if other.size == self.size: 
+                result = zeros(*self.size)
+                def _add_tensors(t1, t2, output, index=[]): 
+                    if len(index) == t1.size.dim(): 
+                        output[index] = t1[index] + t2[index]
+                    else: 
+                        for i in range(t1.size[len(index)]): 
+                            _add_tensors(t1, t2, output, index + [i])
+                _add_tensors(self, other, result)
+                return result
+            else: 
+                raise ValueError(f"Tensors must have the same shape for element-wise addition. Found {other.size} and {self.size}.")
+    
+    def __mul__(self, other: Union[Self, int, float]) -> Self: 
+        if isinstance(other, (float, int)): 
+            result = Tensor(self)
+            for i in range(len(result.data)): 
+                result[i] *= other
+            return result 
+        elif isinstance(other, self): 
+            if other.size == self.size: 
+                result = zeros(*self.size)
+                def _mul_tensors(t1, t2, output, index=[]): 
+                    if len(index) == t1.size.dim(): 
+                        output[index] = t1[index] * t2[index]
+                    else: 
+                        for i in range(t1.size[len(index)]): 
+                            _mul_tensors(t1, t2, output, index + [i])
+                _mul_tensors(self, other, result)
+                return result
+            else: 
+                raise ValueError(f"Tensors must have the same shape for element-wise multiplication. Found {other.size} and {self.size}.")
+        else: 
+            raise ValueError(f"Expected int, float, or Tensor for scalar or element-wise multiplication. Found {type(other)}.")
         
     
     @staticmethod
