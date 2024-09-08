@@ -13,7 +13,6 @@ class Tensor:
         self.size = self._detect_shape(data)
         self.data = _flatten_list(data)
         self.stride = self._get_stride()
-        print(self.stride)
     
     def __getitem__(self, index: list) -> float: 
         flat_index = sum([i*j for i, j in zip(self.stride, index)])
@@ -28,12 +27,12 @@ class Tensor:
         stride = [1]*self.size.dim()
         for i in range(self.size.dim()-1, 0, -1): 
             stride[i-1] = self.size[i]*stride[i]
-        return tuple(stride)
+        return stride
     
     def __eq__(self, other): 
         return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
 
-    
+    def __add__
     
     def _detect_shape(self, data: list) -> tuple: 
         shape = []
@@ -76,7 +75,6 @@ class Tensor:
         for i in range(n): 
             for j in range(p): 
                 for k in range(m): 
-                    print(self[i,k], other[k,j])
                     c[i,j] += self[i,k]*other[k,j]
                     
         return c
@@ -89,7 +87,9 @@ class Tensor:
         return build_list(0, [])
     
     def transpose(self, dim1: int, dim2: int) -> None: 
-        self.size[dim1], self.size[dim2] = self.size[dim2], self.size[dim2]
+        self.size[dim1], self.size[dim2] = self.size[dim2], self.size[dim1]
+        self.stride[dim1], self.stride[dim2] = self.stride[dim2], self.stride[dim1]
+        return self
 
 
 def _flatten_list(data: list): 
@@ -119,8 +119,8 @@ def ones(*shape: Union[tuple, list]) -> Tensor:
 
 
 class Size: 
-    def __init__(self, *sizes: tuple) -> None: 
-        self.data = sizes
+    def __init__(self, *sizes: list) -> None: 
+        self.data = list(sizes)
     
     def __eq__(self, other: Union[Self, int]) -> bool: 
 
@@ -133,6 +133,9 @@ class Size:
     
     def __getitem__(self, dim: int) -> int: 
         return self.data[dim]
+    
+    def __setitem__(self, dim: int, value: int) -> int: 
+        self.data[dim] = value
     
     def __repr__(self): 
         return f"Size({str(self.data)})"
