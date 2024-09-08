@@ -16,11 +16,11 @@ class Tensor:
         print(self.stride)
     
     def __getitem__(self, index: list) -> float: 
-        flat_index = sum([i*j for i, j in zip(reversed(self.stride), index)])
+        flat_index = sum([i*j for i, j in zip(self.stride, index)])
         return self.data[flat_index]
 
     def __setitem__(self, index: list, value) -> None: 
-        flat_index = sum([i*j for i, j in zip(reversed(self.stride), index)])
+        flat_index = sum([i*j for i, j in zip(self.stride, index)])
         self.data[flat_index] = value
 
     
@@ -28,7 +28,7 @@ class Tensor:
         stride = [1]*self.size.dim()
         for i in range(self.size.dim()-1, 0, -1): 
             stride[i-1] = self.size[i]*stride[i]
-        return tuple(reversed(stride))
+        return tuple(stride)
     
     def __eq__(self, other): 
         return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
@@ -82,7 +82,8 @@ class Tensor:
         return c
     
     def tolist(self) -> Union[list, float]: 
-        if len(self.data) == 1 and not isinstance(self.data[0], list): 
+        output_list = _num_list(self.size, 0)
+        if self.data.size == 1 and not isinstance(self.data[0], list): 
             return self.data[0]
         return self.data
     
@@ -105,7 +106,7 @@ def flatten(self, tensor: Tensor) -> Tensor:
     return flat_tensor
 
 def _num_list(shape: Union[tuple, list], num: int) -> list: 
-    if shape.dim() == 1: 
+    if len(shape) == 1: 
         return shape[0] * [num]
     return shape[0] * [_num_list(shape[1:], num)]
 
