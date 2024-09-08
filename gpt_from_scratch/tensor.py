@@ -49,7 +49,7 @@ class Tensor:
         return self.size
     
     def __repr__(self) -> str: 
-        return f"Tensor(shape={self.shape()}, data={self.data})"
+        return f"Tensor(shape={self.shape()}, data={self.tolist()})"
         
     
     @staticmethod
@@ -82,10 +82,11 @@ class Tensor:
         return c
     
     def tolist(self) -> Union[list, float]: 
-        output_list = _num_list(self.size, 0)
-        if self.data.size == 1 and not isinstance(self.data[0], list): 
-            return self.data[0]
-        return self.data
+        def build_list(dim, index): 
+            if dim == self.size.dim(): 
+                return self[index]
+            return [build_list(dim + 1, index + [i]) for i in range(self.size[dim])]
+        return build_list(0, [])
     
     def transpose(self, dim1: int, dim2: int) -> None: 
         self.size[dim1], self.size[dim2] = self.size[dim2], self.size[dim2]
