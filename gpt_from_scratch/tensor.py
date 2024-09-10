@@ -3,43 +3,25 @@ from typing import Self, Union
 
 class Tensor:
 
-    def __init__(self, tensor: Self): 
-        self.size = tensor.size
-        self.data = tensor.data
-        self.stride = tensor.stride
-        
-
-    def __init__(self, data: list) -> None:
-        self.size = self._detect_shape(data)
-        self.data = _flatten_list(data)
-        self.stride = self._get_stride()
+    def __init__(self, data: list, size: 'Size', stride: tuple): 
+        self.size = size
+        self.data = data
+        self.stride = stride
     
     def __getitem__(self, index: list) -> float: 
-        flat_index = sum([i*j for i, j in zip(self.stride, index)])
+        if isinstance(index, int): 
+            index = [index]
+        flat_index = sum([i*j for i, j in zip(self.stride, list(index))])
         return self.data[flat_index]
 
     def __setitem__(self, index: list, value) -> None: 
         flat_index = sum([i*j for i, j in zip(self.stride, index)])
         self.data[flat_index] = value
 
-    
-    def _get_stride(self): 
-        stride = [1]*self.size.dim()
-        for i in range(self.size.dim()-1, 0, -1): 
-            stride[i-1] = self.size[i]*stride[i]
-        return stride
-    
-    def _detect_shape(self, data: list) -> tuple: 
-        shape = []
-        depth_data = data
-        while isinstance(depth_data, (list, tuple)): 
-            shape.append(len(depth_data))
-            if len(depth_data) == 0: 
-                break
-            depth_data = depth_data[0]
-        return Size(*shape)
+    def clone(self) -> Self: 
+        return Tensor(self.data, self.size.clone(), self.stride.copy())
 
-    def shape(self) -> tuple: 
+    def shape(self) -> 'Size': 
         return self.size
     
     def __repr__(self) -> str: 
@@ -65,7 +47,7 @@ class Tensor:
     
     def __mul__(self, other: Union[Self, int, float]) -> Self: 
         if isinstance(other, (float, int)): 
-            result = Tensor(self)
+            result = self.clone()
             for i in range(len(result.data)): 
                 result[i] *= other
             return result 
@@ -121,24 +103,47 @@ class Tensor:
             return [build_list(dim + 1, index + [i]) for i in range(self.size[dim])]
         return build_list(0, [])
     
-    def transpose(self, dim1: int, dim2: int) -> None: 
+    def transpose(self, dim1: int, dim2: int) -> Self: 
         self.size[dim1], self.size[dim2] = self.size[dim2], self.size[dim1]
         self.stride[dim1], self.stride[dim2] = self.stride[dim2], self.stride[dim1]
         return self
 
+def _get_stride(size): 
+        stride = [1]*size.dim()
+        for i in range(size.dim()-1, 0, -1): 
+            stride[i-1] = size[i]*stride[i]
+        return stride
+    
+def _detect_shape(data: list) -> tuple: 
+    shape = []
+    depth_data = data
+    while isinstance(depth_data, (list, tuple)): 
+        shape.append(len(depth_data))
+        if len(depth_data) == 0: 
+            break
+        depth_data = depth_data[0]
+    return Size(*shape)
+
+
+def tensor(data: list) -> Tensor: 
+    size = _detect_shape(data)
+    data = _flatten_list(data)
+    stride = _get_stride(size)
+    return Tensor(data, size, stride)
 
 def _flatten_list(data: list): 
     if isinstance(data, list) and len(data) != 0 and isinstance(data[0], list): 
         data = sum([_flatten_list(i) for i in data], start=[])
     return data
 
-def flatten(self, tensor: Tensor) -> Tensor: 
-    flat_tensor = Tensor(tensor)
+def flatten(tensor: Tensor) -> Tensor: 
+    flat_tensor = tensor.clone()
     prod = 1
-    for i in self.stride: 
+    for i in tensor.size: 
         prod*=i
-    flat_tensor.shape = (prod,)
-    flat_tensor.stride = (1,)
+    flat_tensor.size = Size(prod)
+    flat_tensor.stride = [1]
+    print(flat_tensor.size, flat_tensor.data)
     return flat_tensor
 
 def _num_list(shape: Union[tuple, list], num: int) -> list: 
@@ -147,10 +152,10 @@ def _num_list(shape: Union[tuple, list], num: int) -> list:
     return shape[0] * [_num_list(shape[1:], num)]
 
 def zeros(*shape: Union[tuple, list]) -> Tensor: 
-    return Tensor(_num_list(shape, num=0))
+    return tensor(_num_list(shape, num=0))
 
 def ones(*shape: Union[tuple, list]) -> Tensor:
-    return Tensor(_num_list(shape, num=1))
+    return tensor(_num_list(shape, num=1))
 
 
 class Size: 
@@ -174,6 +179,9 @@ class Size:
     
     def __repr__(self): 
         return f"Size({str(self.data)})"
+    
+    def clone(self): 
+        return Size(*self.data.copy())
     
     def total(self): 
         prod = 1
