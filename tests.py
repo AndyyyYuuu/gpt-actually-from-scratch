@@ -31,6 +31,7 @@ class TestTensorMatMul(unittest.TestCase):
             _ = a @ b
 
 print(tensor([1, 2, 3, 4, 5, 6, 7, 8, 9]).stride)
+print(zeros(2, 3))
 print(cat((tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])), 1))
 #print(Tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
 #unittest.main()

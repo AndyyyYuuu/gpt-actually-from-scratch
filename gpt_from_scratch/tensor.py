@@ -4,6 +4,9 @@ from typing import Self, Union
 class Tensor:
 
     def __init__(self, data: list, size: 'Size', stride: tuple): 
+        assert isinstance(data, (list, tuple))
+        assert isinstance(size, Size)
+        assert isinstance(stride, (list, tuple))
         self.size = size
         self.data = data
         self.stride = stride
@@ -136,10 +139,10 @@ def cat(tensors: tuple[Tensor, ...], dim: int=0):
 
 
 def _get_stride(size): 
-        stride = [1]*size.dim()
-        for i in range(size.dim()-1, 0, -1): 
-            stride[i-1] = size[i]*stride[i]
-        return stride
+    stride = [1]*size.dim()
+    for i in range(size.dim()-1, 0, -1): 
+        stride[i-1] = size[i]*stride[i]
+    return stride
     
 def _detect_shape(data: list) -> tuple: 
     shape = []
@@ -173,16 +176,18 @@ def flatten(tensor: Tensor) -> Tensor:
     print(flat_tensor.size, flat_tensor.data)
     return flat_tensor
 
-def _num_list(shape: Union[tuple, list], num: int) -> list: 
+def _num_tensor(size: 'Size', num: int) -> Tensor: 
+    return Tensor(size.total()*[num], size, _get_stride(size))
+
     if len(shape) == 1: 
         return shape[0] * [num]
     return shape[0] * [_num_list(shape[1:], num)]
 
 def zeros(*shape: Union[tuple, list]) -> Tensor: 
-    return tensor(_num_list(shape, num=0))
+    return _num_tensor(Size(*shape), num=0)
 
 def ones(*shape: Union[tuple, list]) -> Tensor:
-    return tensor(_num_list(shape, num=1))
+    return _num_tensor(Size(*shape), num=1)
 
 
 class Size: 
