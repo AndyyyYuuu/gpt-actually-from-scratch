@@ -103,10 +103,37 @@ class Tensor:
             return [build_list(dim + 1, index + [i]) for i in range(self.size[dim])]
         return build_list(0, [])
     
-    def transpose(self, dim1: int, dim2: int) -> Self: 
-        self.size[dim1], self.size[dim2] = self.size[dim2], self.size[dim1]
-        self.stride[dim1], self.stride[dim2] = self.stride[dim2], self.stride[dim1]
-        return self
+def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor: 
+    output = input.clone()
+    output.size[dim1], output.size[dim2] = input.size[dim2], input.size[dim1]
+    output.stride[dim1], output.stride[dim2] = input.stride[dim2], input.stride[dim1]
+    return output
+
+
+
+def cat(tensors: tuple[Tensor, ...], dim: int=0): 
+    for t in tensors[1:]: 
+        for i in range(t.size.dim()): 
+            if i != dim and t.size[i] != tensors[0].size[i]: 
+                raise ValueError(f"Tensors of sizes {tensors[0].size, t.size} cannot be concatenated.")
+    tensor_dims = tensors[0].size.dim()
+    new_size = [tensors[0].size[i] if i != dim else sum([t.size[i] for t in tensors]) for i in range(tensor_dims)]
+    result = zeros(*new_size)
+
+    offset = 0  # Offset value for copying: sum of previous tensor lengths
+    for i in range(len(tensors)): 
+        def _copy_sublist(pos: list, depth: int): 
+            if depth == 0: 
+                result_pos = pos.copy()
+                result_pos[dim] += offset
+                result[result_pos] = tensors[i][pos]
+            else: 
+                for j in range(tensors[i].size[-depth]): 
+                    _copy_sublist(pos+[j], depth-1)
+        _copy_sublist([], tensor_dims)
+        offset += tensors[i].size[dim]
+    return result
+
 
 def _get_stride(size): 
         stride = [1]*size.dim()
