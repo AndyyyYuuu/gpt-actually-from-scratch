@@ -30,7 +30,7 @@ class TestTensorMatMul(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = a @ b
 
-print(tensor([1, 2, 3, 4, 5, 6, 7, 8, 9]).stride)
+print(tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])[1:,:-1])
 print(zeros(2, 3))
 print(cat((tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])), 1))
 #print(Tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))

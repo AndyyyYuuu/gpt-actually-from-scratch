@@ -11,11 +11,36 @@ class Tensor:
         self.data = data
         self.stride = stride
     
-    def __getitem__(self, index: list) -> float: 
-        if isinstance(index, int): 
+    
+    def __getitem__(self, index: Union[int, list[Union[int, slice]]]) -> float: 
+        if isinstance(index, (int, slice)): 
             index = [index]
-        flat_index = sum([i*j for i, j in zip(self.stride, list(index))])
-        return self.data[flat_index]
+        
+        if all([isinstance(i, int) for i in index]):
+            flat_index = sum([i*j for i, j in zip(self.stride, list(index))])
+            return self.data[flat_index]
+        
+        if len(index) > self.size.dim(): 
+            raise IndexError(f"Tensor index out of range (expected {self.size.dim()} dimensions, found {len(index)})")
+        for i in range(len(index)): 
+            if isinstance(index[i], int): 
+                index[i] = slice(index[i])
+            elif not isinstance(index[i], slice): 
+                raise IndexError(f"Tensor index must be list of int or slice (found {type(index[i])})")
+            
+        result = zeros(*[len(range(self.size[i])[index[i]]) for i in range(len(index))])
+        
+
+        def _get_slice(slices: list[slice], pos_self: list[int], pos_result: list[int], depth=0) -> None: 
+            if len(slices) == 0: 
+                result[pos_result] = self[pos_self]
+            else: 
+                for i,j in enumerate(range(self.size[depth])[slices[0]]): 
+                    _get_slice(slices[1:], pos_self+[j], pos_result+[i], depth+1)
+        
+        _get_slice(index, [], [])
+        return result
+
 
     def __setitem__(self, index: list, value) -> None: 
         flat_index = sum([i*j for i, j in zip(self.stride, index)])
@@ -203,7 +228,7 @@ class Size:
     def __ne__(self, other: Self) -> bool: 
         return not self == other
     
-    def __getitem__(self, dim: int) -> int: 
+    def __getitem__(self, dim: Union[int, slice]) -> Union[int, list]: 
         return self.data[dim]
     
     def __setitem__(self, dim: int, value: int) -> int: 
