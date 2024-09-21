@@ -1,20 +1,22 @@
 from typing import Self, Union
-
+from .utils import _enforce_type
 
 class Tensor:
 
     def __init__(self, data: list, size: 'Size', stride: tuple): 
-        assert isinstance(data, (list, tuple))
-        assert isinstance(size, Size)
-        assert isinstance(stride, (list, tuple))
+        _enforce_type(data, list, float)
+        _enforce_type(size, Size)
+        _enforce_type(stride, tuple, float)
         self.size = size
         self.data = data
         self.stride = stride
     
-    
-    def __getitem__(self, index: Union[int, list[Union[int, slice]]]) -> float: 
+
+    def __getitem__(self, index: Union[int, slice, list[Union[int, slice]]]) -> Union[float, list]: 
         if isinstance(index, (int, slice)): 
-            index = [index]
+            index = (index,)
+        
+        _enforce_type(index, tuple)
         
         if all([isinstance(i, int) for i in index]):
             flat_index = sum([i*j for i, j in zip(self.stride, list(index))])
@@ -26,7 +28,7 @@ class Tensor:
             if isinstance(index[i], int): 
                 index[i] = slice(index[i])
             elif not isinstance(index[i], slice): 
-                raise IndexError(f"Tensor index must be list of int or slice (found {type(index[i])})")
+                raise TypeError(f"Tensor index must be list of int or slice (found {type(index[i])})")
             
         result = zeros(*[len(range(self.size[i])[index[i]]) for i in range(len(index))])
         
@@ -43,6 +45,7 @@ class Tensor:
 
 
     def __setitem__(self, index: list, value) -> None: 
+        _enforce_type(index, list)
         flat_index = sum([i*j for i, j in zip(self.stride, index)])
         self.data[flat_index] = value
 
@@ -56,9 +59,11 @@ class Tensor:
         return f"Tensor(shape={self.shape()}, data={self.tolist()})"
     
     def __eq__(self, other: Self) -> bool: 
+        _enforce_type(other, Tensor)
         return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
 
     def __add__(self, other: Self) -> Self: 
+        _enforce_type(other, Tensor)
         if isinstance(other, Tensor): 
             if other.size == self.size: 
                 result = zeros(*self.size)
@@ -93,7 +98,7 @@ class Tensor:
             else: 
                 raise ValueError(f"Tensors must have the same shape for element-wise multiplication. Found {other.size} and {self.size}.")
         else: 
-            raise ValueError(f"Expected int, float, or Tensor for scalar or element-wise multiplication. Found {type(other)}.")
+            raise TypeError(f"Expected int, float, or Tensor for scalar or element-wise multiplication. Found {type(other)}.")
         
     
     @staticmethod
@@ -132,6 +137,9 @@ class Tensor:
         return build_list(0, [])
     
 def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor: 
+    _enforce_type(input, Tensor)
+    _enforce_type(dim1, int)
+    _enforce_type(dim2, int)
     output = input.clone()
     output.size[dim1], output.size[dim2] = input.size[dim2], input.size[dim1]
     output.stride[dim1], output.stride[dim2] = input.stride[dim2], input.stride[dim1]
@@ -140,6 +148,8 @@ def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor:
 
 
 def cat(tensors: tuple[Tensor, ...], dim: int=0): 
+    _enforce_type(tensors, tuple, Tensor)
+    _enforce_type(dim, int)
     for t in tensors[1:]: 
         for i in range(t.size.dim()): 
             if i != dim and t.size[i] != tensors[0].size[i]: 
@@ -181,8 +191,11 @@ def _detect_shape(data: list) -> tuple:
 
 
 def tensor(data: list) -> Tensor: 
+    if isinstance(data, tuple): 
+        data = list(data)
     size = _detect_shape(data)
     data = _flatten_list(data)
+    _enforce_type(data, list, float)
     stride = _get_stride(size)
     return Tensor(data, size, stride)
 
@@ -192,6 +205,7 @@ def _flatten_list(data: list):
     return data
 
 def flatten(tensor: Tensor) -> Tensor: 
+    _enforce_type(tensor, Tensor)
     flat_tensor = tensor.clone()
     prod = 1
     for i in tensor.size: 
@@ -204,10 +218,6 @@ def flatten(tensor: Tensor) -> Tensor:
 def _num_tensor(size: 'Size', num: int) -> Tensor: 
     return Tensor(size.total()*[num], size, _get_stride(size))
 
-    if len(shape) == 1: 
-        return shape[0] * [num]
-    return shape[0] * [_num_list(shape[1:], num)]
-
 def zeros(*shape: Union[tuple, list]) -> Tensor: 
     return _num_tensor(Size(*shape), num=0)
 
@@ -216,22 +226,26 @@ def ones(*shape: Union[tuple, list]) -> Tensor:
 
 
 class Size: 
-    def __init__(self, *sizes: list) -> None: 
+    def __init__(self, *sizes: tuple) -> None: 
+        _enforce_type(sizes, tuple, int)
         self.data = list(sizes)
     
-    def __eq__(self, other: Union[Self, int]) -> bool: 
-
+    def __eq__(self, other: Self) -> bool: 
+        _enforce_type(other, Size)
         if self.dim() != other.dim(): 
             return False
         return all([i == j for i, j in zip(self, other)])
     
     def __ne__(self, other: Self) -> bool: 
+        _enforce_type(other, Size)
         return not self == other
     
     def __getitem__(self, dim: Union[int, slice]) -> Union[int, list]: 
         return self.data[dim]
     
     def __setitem__(self, dim: int, value: int) -> int: 
+        _enforce_type(dim, int)
+        _enforce_type(value, int)
         self.data[dim] = value
     
     def __repr__(self): 

@@ -1,6 +1,6 @@
 import unittest
-from gpt_from_scratch.tensor import *
-
+from gpt_from_scratch.tensor import Tensor, tensor, zeros, cat
+from gpt_from_scratch.utils import _enforce_type
 
 class TestTensorMatMul(unittest.TestCase):
     def test_2x2_matmul(self):
