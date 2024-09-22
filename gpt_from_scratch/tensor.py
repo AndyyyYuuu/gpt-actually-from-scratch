@@ -17,16 +17,20 @@ class Tensor:
             index = (index,)
         
         _enforce_type(index, tuple)
+        index = list(index)
         
-        if all([isinstance(i, int) for i in index]):
+        if all([isinstance(i, int) for i in index]) and len(index) == self.size.dim():
             flat_index = sum([i*j for i, j in zip(self.stride, list(index))])
             return self.data[flat_index]
         
         if len(index) > self.size.dim(): 
             raise IndexError(f"Tensor index out of range (expected {self.size.dim()} dimensions, found {len(index)})")
+        while len(index) < self.size.dim(): 
+            index.append(slice(None))
+        
         for i in range(len(index)): 
             if isinstance(index[i], int): 
-                index[i] = slice(index[i])
+                index[i] = slice(index[i], index[i]+1, None)
             elif not isinstance(index[i], slice): 
                 raise TypeError(f"Tensor index must be list of int or slice (found {type(index[i])})")
             
