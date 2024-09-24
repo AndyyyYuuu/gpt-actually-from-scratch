@@ -1,5 +1,5 @@
 import unittest
-from gpt_from_scratch.tensor import Tensor, tensor, zeros, cat
+from gpt_from_scratch.tensor import Tensor, tensor, zeros, cat, sum
 from gpt_from_scratch.utils import _enforce_type
 
 class TestTensorMatMul(unittest.TestCase):
@@ -30,7 +30,8 @@ class TestTensorMatMul(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = a @ b
 
-print(tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])[1:3])
+
+print(sum(tensor([[[1, 2, 3], [4, 5, 6], [7, 8, 9]],[[1, 2, 3], [4, 5, 6], [7, 8, 9]]]), 0))
 print(zeros(2, 3))
 print(cat((tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])), 1))
 #print(Tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))

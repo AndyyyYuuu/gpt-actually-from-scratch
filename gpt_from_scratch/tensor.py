@@ -1,5 +1,6 @@
 from typing import Self, Union
 from .utils import _enforce_type
+import builtins
 
 class Tensor:
 
@@ -20,7 +21,7 @@ class Tensor:
         index = list(index)
         
         if all([isinstance(i, int) for i in index]) and len(index) == self.size.dim():
-            flat_index = sum([i*j for i, j in zip(self.stride, list(index))])
+            flat_index = builtins.sum([i*j for i, j in zip(self.stride, list(index))])
             return self.data[flat_index]
         
         if len(index) > self.size.dim(): 
@@ -45,12 +46,22 @@ class Tensor:
                     _get_slice(slices[1:], pos_self+[j], pos_result+[i], depth+1)
         
         _get_slice(index, [], [])
+
+        # Squeeze sliced dimensions
+        new_size = []
+        new_stride = []
+        for i in range(self.size.dim()): 
+            if self.size[i] == 1 or result.size[i] != 1:
+                new_size.append(result.size[i])
+                new_stride.append(result.stride[i])
+        result.size = Size(*new_size)
+        result.stride = new_stride
         return result
 
 
     def __setitem__(self, index: list, value) -> None: 
         _enforce_type(index, list)
-        flat_index = sum([i*j for i, j in zip(self.stride, index)])
+        flat_index = builtins.sum([i*j for i, j in zip(self.stride, index)])
         self.data[flat_index] = value
 
     def clone(self) -> Self: 
@@ -168,7 +179,7 @@ def cat(tensors: tuple[Tensor, ...], dim: int=0):
             if i != dim and t.size[i] != tensors[0].size[i]: 
                 raise ValueError(f"Tensors of sizes {tensors[0].size, t.size} cannot be concatenated.")
     tensor_dims = tensors[0].size.dim()
-    new_size = [tensors[0].size[i] if i != dim else sum([t.size[i] for t in tensors]) for i in range(tensor_dims)]
+    new_size = [tensors[0].size[i] if i != dim else builtins.sum([t.size[i] for t in tensors]) for i in range(tensor_dims)]
     result = zeros(*new_size)
 
     offset = 0  # Offset value for copying: sum of previous tensor lengths
@@ -214,7 +225,7 @@ def tensor(data: list) -> Tensor:
 
 def _flatten_list(data: list): 
     if isinstance(data, list) and len(data) != 0 and isinstance(data[0], list): 
-        data = sum([_flatten_list(i) for i in data], start=[])
+        data = builtins.sum([_flatten_list(i) for i in data], start=[])
     return data
 
 def flatten(tensor: Tensor) -> Tensor: 
@@ -225,7 +236,7 @@ def flatten(tensor: Tensor) -> Tensor:
         prod*=i
     flat_tensor.size = Size(prod)
     flat_tensor.stride = [1]
-    print(flat_tensor.size, flat_tensor.data)
+    #print(flat_tensor.size, flat_tensor.data)
     return flat_tensor
 
 def _num_tensor(size: 'Size', num: int) -> Tensor: 
@@ -236,6 +247,19 @@ def zeros(*shape: Union[tuple, list]) -> Tensor:
 
 def ones(*shape: Union[tuple, list]) -> Tensor:
     return _num_tensor(Size(*shape), num=1)
+
+
+def sum(input: Tensor, dim:int=None) -> Union[float, Tensor]: 
+    if dim is None: 
+        return builtins.sum(tensor.data)
+    if dim >= input.size.dim(): 
+        raise ValueError(f"dimension {dim} out of range for {input.size.dim()}-d Tensor")
+    output_tensor = zeros(*(input.size[:dim]+input.size[dim+1:]))
+    for i in range(input.size[dim]): 
+        #print(input)
+        #print(input[*input.size[:dim], i])
+        output_tensor += input[*input.size[:dim], i]
+    return output_tensor
 
 
 class Size: 
