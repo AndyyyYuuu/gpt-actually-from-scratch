@@ -149,7 +149,16 @@ def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor:
     output.stride[dim1], output.stride[dim2] = input.stride[dim2], input.stride[dim1]
     return output
 
+def squeeze(input: Tensor) -> Tensor: 
+    new_size = []
+    new_stride = []
+    for i in range(input.size.dim()): 
+        if input.size[i] != 1: 
+            new_size.append(input.size[i])
+            new_stride.append(input.stride[i])
+    return Tensor(input.data, Size(new_size), new_stride)
 
+            
 
 def cat(tensors: tuple[Tensor, ...], dim: int=0): 
     _enforce_type(tensors, tuple, Tensor)
