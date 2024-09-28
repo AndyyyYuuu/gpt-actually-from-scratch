@@ -2,6 +2,38 @@ import unittest
 from gpt_from_scratch.tensor import Tensor, tensor, zeros, cat, sum
 from gpt_from_scratch.utils import _enforce_type
 
+class TestTensorSummation(unittest.TestCase):
+    def test_1d_tensor_sum(self):
+        t = tensor([1, 2, 3, 4, 5])
+        self.assertEqual(sum(t), tensor(15))
+        self.assertEqual(sum(t, dim=0), tensor(15))
+
+    def test_2d_tensor_sum(self):
+        t = tensor([[1, 2, 3], [4, 5, 6]])
+        self.assertEqual(sum(t), tensor(21))
+        self.assertEqual(sum(t, dim=0), tensor([5, 7, 9]))
+        self.assertEqual(sum(t, dim=1), tensor([6, 15]))
+
+    def test_3d_tensor_sum(self):
+        t = tensor([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+        self.assertEqual(sum(t), tensor(36))
+        self.assertEqual(sum(t, dim=0), tensor([[6, 8], [10, 12]]))
+        self.assertEqual(sum(t, dim=1), tensor([[4, 6], [12, 14]]))
+        self.assertEqual(sum(t, dim=2), tensor([[3, 7], [11, 15]]))
+
+    def test_4d_tensor_sum(self):
+        t = tensor([[[[1, 2], [3, 4]], [[5, 6], [7, 8]]],
+                    [[[9, 10], [11, 12]], [[13, 14], [15, 16]]]])
+        self.assertEqual(sum(t), tensor(136))
+        self.assertEqual(sum(t, dim=0), 
+                         tensor([[[10, 12], [14, 16]], [[18, 20], [22, 24]]]))
+        self.assertEqual(sum(t, dim=1), 
+                         tensor([[[6, 8], [10, 12]], [[22, 24], [26, 28]]]))
+        self.assertEqual(sum(t, dim=2), 
+                         tensor([[[4, 6], [12, 14]], [[20, 22], [28, 30]]]))
+        self.assertEqual(sum(t, dim=3), 
+                         tensor([[[3, 7], [11, 15]], [[19, 23], [27, 31]]]))
+
 class TestTensorMatMul(unittest.TestCase):
     def test_2x2_matmul(self):
         a = tensor([[1, 2], [3, 4]])
@@ -31,8 +63,10 @@ class TestTensorMatMul(unittest.TestCase):
             _ = a @ b
 
 
-print(sum(tensor([[[1, 2, 3], [4, 5, 6], [7, 8, 9]],[[1, 2, 3], [4, 5, 6], [7, 8, 9]]]), 0))
+print(sum(tensor([[[1, 2, 3], [4, 5, 6], [7, 8, 9]],[[1, 2, 3], [4, 5, 6], [7, 8, 9]]]), 2))
 print(zeros(2, 3))
 print(cat((tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])), 1))
 #print(Tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
 #unittest.main()
+if __name__ == '__main__':
+    unittest.main()

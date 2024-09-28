@@ -60,7 +60,7 @@ class Tensor:
 
 
     def __setitem__(self, index: list, value) -> None: 
-        _enforce_type(index, list)
+        _enforce_type(index, tuple)
         flat_index = builtins.sum([i*j for i, j in zip(self.stride, index)])
         self.data[flat_index] = value
 
@@ -161,6 +161,7 @@ def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor:
     return output
 
 def squeeze(input: Tensor) -> Tensor: 
+    _enforce_type(input, Tensor)
     new_size = []
     new_stride = []
     for i in range(input.size.dim()): 
@@ -197,7 +198,8 @@ def cat(tensors: tuple[Tensor, ...], dim: int=0):
     return result
 
 
-def _get_stride(size): 
+def _get_stride(size: 'Size') -> list: 
+    _enforce_type(size, Size)
     stride = [1]*size.dim()
     for i in range(size.dim()-1, 0, -1): 
         stride[i-1] = size[i]*stride[i]
@@ -217,6 +219,8 @@ def _detect_shape(data: list) -> tuple:
 def tensor(data: list) -> Tensor: 
     if isinstance(data, tuple): 
         data = list(data)
+    elif isinstance(data, int): 
+        data = [data]
     size = _detect_shape(data)
     data = _flatten_list(data)
     _enforce_type(data, list, float)
@@ -236,7 +240,6 @@ def flatten(tensor: Tensor) -> Tensor:
         prod*=i
     flat_tensor.size = Size(prod)
     flat_tensor.stride = [1]
-    #print(flat_tensor.size, flat_tensor.data)
     return flat_tensor
 
 def _num_tensor(size: 'Size', num: int) -> Tensor: 
@@ -250,15 +253,24 @@ def ones(*shape: Union[tuple, list]) -> Tensor:
 
 
 def sum(input: Tensor, dim:int=None) -> Union[float, Tensor]: 
+    _enforce_type(input, Tensor)
+    
     if dim is None: 
-        return builtins.sum(tensor.data)
+        return tensor(builtins.sum(input.data))
+
+    _enforce_type(dim, int)
+
     if dim >= input.size.dim(): 
         raise ValueError(f"dimension {dim} out of range for {input.size.dim()}-d Tensor")
+    
+    if input.size.dim() == 1: 
+        return tensor(builtins.sum(input.data))
+    
     output_tensor = zeros(*(input.size[:dim]+input.size[dim+1:]))
+    total_slice = [slice(None)] * input.size.dim()
     for i in range(input.size[dim]): 
-        #print(input)
-        #print(input[*input.size[:dim], i])
-        output_tensor += input[*input.size[:dim], i]
+        total_slice[dim] = i
+        output_tensor += input[tuple(total_slice)]
     return output_tensor
 
 
