@@ -1,3 +1,12 @@
+'''
+Note: 
+
+The test cases in the following file were generated using an AI large language 
+model (GPT-4o mini via chatgpt.com) for convenience and accuracy. While AI was
+used to assist in generating these test cases, the implementation and
+validation of the tests are the responsibility of the author.
+'''
+
 import unittest
 from gpt_from_scratch.tensor import Tensor, tensor, zeros, cat, sum
 from gpt_from_scratch.utils import _enforce_type
