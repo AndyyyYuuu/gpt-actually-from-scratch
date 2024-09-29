@@ -7,7 +7,10 @@ used to assist in generating these test cases, the implementation and
 validation of the tests are the responsibility of the author.
 '''
 
-import unittest
+import unittest, os, sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+
 from gpt_from_scratch.tensor import Tensor, tensor, zeros, cat, sum
 from gpt_from_scratch.utils import _enforce_type
 
