@@ -1,4 +1,4 @@
 
-import tensor
-def linear(input: tensor.Tensor, weight: tensor.Tensor, bias: tensor.Tensor): 
-    return sum(input * weight) + bias
+from . import tensor
+def linear(input: tensor.Tensor, weight: tensor.Tensor, bias: tensor.Tensor=None): 
+    return input @ weight + bias
