@@ -5,6 +5,7 @@ import builtins
 class Tensor:
 
     def __init__(self, data: list, size: 'Size', stride: tuple): 
+        
         _enforce_type(data, list, float)
         _enforce_type(size, Size)
         _enforce_type(stride, tuple, float)
@@ -77,21 +78,29 @@ class Tensor:
         _enforce_type(other, Tensor)
         return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
 
-    def __add__(self, other: Self) -> Self: 
+    def __add__(self, other: Union[Self, float]) -> Self: 
+        if isinstance(other, Tensor) and other.size == Size(1):
+            other = other[0]
+        if isinstance(other, (float, int)): 
+            result = self.clone()
+            for i in range(len(result.data)): 
+                result.data[i] += other
+            
+            return result
+        
         _enforce_type(other, Tensor)
-        if isinstance(other, Tensor): 
-            if other.size == self.size: 
-                result = zeros(*self.size)
-                def _add_tensors(t1, t2, output, index=[]): 
-                    if len(index) == t1.size.dim(): 
-                        output[index] = t1[index] + t2[index]
-                    else: 
-                        for i in range(t1.size[len(index)]): 
-                            _add_tensors(t1, t2, output, index + [i])
-                _add_tensors(self, other, result)
-                return result
-            else: 
-                raise ValueError(f"Tensors must have the same shape for element-wise addition. Found {other.size} and {self.size}.")
+        if other.size == self.size: 
+            result = zeros(*self.size)
+            def _add_tensors(t1, t2, output, index=[]): 
+                if len(index) == t1.size.dim(): 
+                    output[index] = t1[index] + t2[index]
+                else: 
+                    for i in range(t1.size[len(index)]): 
+                        _add_tensors(t1, t2, output, index + [i])
+            _add_tensors(self, other, result)
+            return result
+        else: 
+            raise ValueError(f"Tensors must have the same shape for element-wise addition. Found {other.size} and {self.size}.")
     
     def __mul__(self, other: Union[Self, int, float]) -> Self: 
         if isinstance(other, (float, int)): 
@@ -130,6 +139,8 @@ class Tensor:
         _self = self.clone()
         if _self.size.dim() <= 1: 
             _self = unsqueeze(_self, 0)
+        if other.size.dim() <= 1: 
+            other = unsqueeze(other, 0)
         if _self.size.dim() >= 2 and _self.size[1] != other.size[0]: 
             if other.size[1] == _self.size[0]: 
                 _self, other = other, _self
@@ -143,7 +154,8 @@ class Tensor:
             for j in range(p): 
                 for k in range(m): 
                     c[i,j] += _self[i,k]*other[k,j]
-                    
+        if c.size[0] == 1:
+            c = squeeze(c, 0)
         return c
     
     def tolist(self) -> Union[list, float]: 
@@ -162,15 +174,25 @@ def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor:
     output.stride[dim1], output.stride[dim2] = input.stride[dim2], input.stride[dim1]
     return output
 
-def squeeze(input: Tensor) -> Tensor: 
+def squeeze(input: Tensor, dim: int=None) -> Tensor: 
     _enforce_type(input, Tensor)
-    new_size = []
-    new_stride = []
-    for i in range(input.size.dim()): 
-        if input.size[i] != 1: 
-            new_size.append(input.size[i])
-            new_stride.append(input.stride[i])
-    return Tensor(input.data, Size(new_size), new_stride)
+    if dim is None: 
+        new_size = []
+        new_stride = []
+        for i in range(input.size.dim()): 
+            if input.size[i] != 1: 
+                new_size.append(input.size[i])
+                new_stride.append(input.stride[i])
+        return Tensor(input.data, Size(new_size), new_stride)
+    else: 
+        _enforce_type(dim, int)
+        result = input.clone()
+        if result.size[dim] == 1:
+            result.stride.pop(dim)
+            result.size.data.pop(dim)
+        else: 
+            raise ValueError(f"squeeze() expected a dimension of size 1 at index {dim}, got {result.size[dim]}")
+        return result
 
 def unsqueeze(input: Tensor, dim: int) -> Tensor: 
     _enforce_type(input, Tensor)
