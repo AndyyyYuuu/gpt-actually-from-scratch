@@ -127,20 +127,22 @@ class Tensor:
             return all([data1[i] == data2[i] for i in range(len(data1))])
     
     def __matmul__(self, other: Self) -> Self:
-        
-        if self.size[1] != other.size[0]: 
-            if other.size[1] == self.size[0]: 
-                self, other = other, self
+        _self = self.clone()
+        if _self.size.dim() <= 1: 
+            _self = unsqueeze(_self, 0)
+        if _self.size.dim() >= 2 and _self.size[1] != other.size[0]: 
+            if other.size[1] == _self.size[0]: 
+                _self, other = other, _self
             else: 
-                raise ValueError("The number of columns in the first matrix must equal the number of rows in the second")
-        n = self.size[0]
+                raise ValueError(f"The number of columns in the first matrix must equal the number of rows in the second (found {_self.size} and {other.size})")
+        n = _self.size[0]
         m = other.size[0]
         p = other.size[1]
         c = zeros(n, p)
         for i in range(n): 
             for j in range(p): 
                 for k in range(m): 
-                    c[i,j] += self[i,k]*other[k,j]
+                    c[i,j] += _self[i,k]*other[k,j]
                     
         return c
     
@@ -170,7 +172,17 @@ def squeeze(input: Tensor) -> Tensor:
             new_stride.append(input.stride[i])
     return Tensor(input.data, Size(new_size), new_stride)
 
-            
+def unsqueeze(input: Tensor, dim: int) -> Tensor: 
+    _enforce_type(input, Tensor)
+    _enforce_type(dim, int)
+    input = input.clone()
+    input.size.data.insert(dim, 1)
+    if dim != 0: 
+        input.stride.insert(dim, input.stride[dim-1])
+    else: 
+        input.stride.insert(dim, 1)
+    return input
+    
 
 def cat(tensors: tuple[Tensor, ...], dim: int=0): 
     _enforce_type(tensors, tuple, Tensor)
