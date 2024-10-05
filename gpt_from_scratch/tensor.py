@@ -55,7 +55,7 @@ class Tensor:
             if self.size[i] == 1 or result.size[i] != 1:
                 new_size.append(result.size[i])
                 new_stride.append(result.stride[i])
-        result.size = Size(*new_size)
+        result.size = Size(new_size)
         result.stride = new_stride
         return result
 
@@ -79,7 +79,7 @@ class Tensor:
         return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
 
     def __add__(self, other: Union[Self, float]) -> Self: 
-        if isinstance(other, Tensor) and other.size == Size(1):
+        if isinstance(other, Tensor) and other.size == Size([]):
             other = other[0]
         if isinstance(other, (float, int)): 
             result = self.clone()
@@ -247,14 +247,15 @@ def _detect_shape(data: list) -> tuple:
         if len(depth_data) == 0: 
             break
         depth_data = depth_data[0]
-    return Size(*shape)
+    return Size(shape)
 
 
-def tensor(data: list) -> Tensor: 
+def tensor(data: Union[list, float, int]) -> Tensor: 
     if isinstance(data, tuple): 
         data = list(data)
     elif isinstance(data, int): 
-        data = [data]
+        data = data
+        size = Size([])
     size = _detect_shape(data)
     data = _flatten_list(data)
     _enforce_type(data, list, float)
@@ -272,7 +273,7 @@ def flatten(tensor: Tensor) -> Tensor:
     prod = 1
     for i in tensor.size: 
         prod*=i
-    flat_tensor.size = Size(prod)
+    flat_tensor.size = Size([prod])
     flat_tensor.stride = [1]
     return flat_tensor
 
@@ -280,10 +281,10 @@ def _num_tensor(size: 'Size', num: int) -> Tensor:
     return Tensor(size.total()*[num], size, _get_stride(size))
 
 def zeros(*shape: Union[tuple, list]) -> Tensor: 
-    return _num_tensor(Size(*shape), num=0)
+    return _num_tensor(Size(shape), num=0)
 
 def ones(*shape: Union[tuple, list]) -> Tensor:
-    return _num_tensor(Size(*shape), num=1)
+    return _num_tensor(Size(shape), num=1)
 
 
 def sum(input: Tensor, dim:int=None) -> Union[float, Tensor]: 
@@ -309,7 +310,9 @@ def sum(input: Tensor, dim:int=None) -> Union[float, Tensor]:
 
 
 class Size: 
-    def __init__(self, *sizes: tuple) -> None: 
+    def __init__(self, sizes: list) -> None: 
+        if isinstance(sizes, int): 
+            sizes = [sizes]
         _enforce_type(sizes, tuple, int)
         self.data = list(sizes)
     
@@ -335,7 +338,7 @@ class Size:
         return f"Size({str(self.data)})"
     
     def clone(self): 
-        return Size(*self.data.copy())
+        return Size(self.data.copy())
     
     def total(self): 
         prod = 1
