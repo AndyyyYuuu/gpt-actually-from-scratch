@@ -164,6 +164,32 @@ class Tensor:
                 return self[index]
             return [build_list(dim + 1, index + [i]) for i in range(self.size[dim])]
         return build_list(0, [])
+
+    def unsqueeze(self, dim: int) -> None: 
+        _enforce_type(dim, int)
+        self.size.data.insert(dim, 1)
+        if dim != 0: 
+            self.stride.insert(dim, self.stride[dim-1])
+        else: 
+            self.stride.insert(dim, 1)
+    
+    def squeeze(self, dim: int=None) -> None: 
+        if dim is None: 
+            new_size = []
+            new_stride = []
+            for i in range(self.size.dim()): 
+                if self.size[i] != 1: 
+                    new_size.append(self.size[i])
+                    new_stride.append(self.stride[i])
+            self.size = Size(new_size)
+            self.stride = new_stride
+        else: 
+            _enforce_type(dim, int)
+            if self.size[dim] == 1:
+                self.stride.pop(dim)
+                self.size.data.pop(dim)
+            else: 
+                raise ValueError(f"squeeze() expected a dimension of size 1 at index {dim}, got {self.size[dim]}")
     
 def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor: 
     _enforce_type(input, Tensor)
@@ -174,36 +200,9 @@ def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor:
     output.stride[dim1], output.stride[dim2] = input.stride[dim2], input.stride[dim1]
     return output
 
-def squeeze(input: Tensor, dim: int=None) -> Tensor: 
-    _enforce_type(input, Tensor)
-    if dim is None: 
-        new_size = []
-        new_stride = []
-        for i in range(input.size.dim()): 
-            if input.size[i] != 1: 
-                new_size.append(input.size[i])
-                new_stride.append(input.stride[i])
-        return Tensor(input.data, Size(new_size), new_stride)
-    else: 
-        _enforce_type(dim, int)
-        result = input.clone()
-        if result.size[dim] == 1:
-            result.stride.pop(dim)
-            result.size.data.pop(dim)
-        else: 
-            raise ValueError(f"squeeze() expected a dimension of size 1 at index {dim}, got {result.size[dim]}")
-        return result
 
-def unsqueeze(input: Tensor, dim: int) -> Tensor: 
-    _enforce_type(input, Tensor)
-    _enforce_type(dim, int)
-    input = input.clone()
-    input.size.data.insert(dim, 1)
-    if dim != 0: 
-        input.stride.insert(dim, input.stride[dim-1])
-    else: 
-        input.stride.insert(dim, 1)
-    return input
+
+
     
 
 def cat(tensors: tuple[Tensor, ...], dim: int=0): 
