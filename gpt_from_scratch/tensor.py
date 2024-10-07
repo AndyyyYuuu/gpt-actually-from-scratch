@@ -79,6 +79,7 @@ class Tensor:
         return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
 
     def __add__(self, other: Union[Self, float]) -> Self: 
+        
         if isinstance(other, Tensor) and other.size == Size([]):
             other = other[0]
         if isinstance(other, (float, int)): 
@@ -87,20 +88,35 @@ class Tensor:
                 result.data[i] += other
             
             return result
-        
-        _enforce_type(other, Tensor)
-        if other.size == self.size: 
-            result = zeros(*self.size)
-            def _add_tensors(t1, t2, output, index=[]): 
-                if len(index) == t1.size.dim(): 
-                    output[index] = t1[index] + t2[index]
-                else: 
-                    for i in range(t1.size[len(index)]): 
-                        _add_tensors(t1, t2, output, index + [i])
-            _add_tensors(self, other, result)
-            return result
-        else: 
-            raise ValueError(f"Tensors must have the same shape for element-wise addition. Found {other.size} and {self.size}.")
+
+        if self.size != other.size: 
+            _self = self.clone()
+            _enforce_type(other, Tensor)
+            other = other.clone()
+            while other.size.dim() < _self.size.dim(): 
+                other.unsqueeze(0)
+            while other.size.dim() > _self.size.dim(): 
+                _self.unsqueeze(0)
+            
+            for i, j in zip(_self.size, other.size): 
+                if i != j and i != 1 and j != 1:
+                    raise ValueError(f"Incompatible addition for tensors of shapes {self.size} and {other.size}.")
+            
+            if _self.size.total() < other.size.total(): 
+                _self.expand(other.size)
+            else: 
+                other.expand(self.size)
+    
+        result = zeros(*self.size)
+        def _add_tensors(t1, t2, output, index=[]): 
+            if len(index) == t1.size.dim(): 
+                output[index] = t1[index] + t2[index]
+            else: 
+                for i in range(t1.size[len(index)]): 
+                    _add_tensors(t1, t2, output, index + [i])
+        _add_tensors(self, other, result)
+        return result
+            
     
     def __mul__(self, other: Union[Self, int, float]) -> Self: 
         if isinstance(other, (float, int)): 
@@ -138,9 +154,9 @@ class Tensor:
     def __matmul__(self, other: Self) -> Self:
         _self = self.clone()
         if _self.size.dim() <= 1: 
-            _self = unsqueeze(_self, 0)
+            _self.unsqueeze(0)
         if other.size.dim() <= 1: 
-            other = unsqueeze(other, 0)
+            other.unsqueeze(0)
         if _self.size.dim() >= 2 and _self.size[1] != other.size[0]: 
             if other.size[1] == _self.size[0]: 
                 _self, other = other, _self
@@ -155,7 +171,7 @@ class Tensor:
                 for k in range(m): 
                     c[i,j] += _self[i,k]*other[k,j]
         if c.size[0] == 1:
-            c = squeeze(c, 0)
+            c.squeeze(0)
         return c
     
     def tolist(self) -> Union[list, float]: 
@@ -190,6 +206,19 @@ class Tensor:
                 self.size.data.pop(dim)
             else: 
                 raise ValueError(f"squeeze() expected a dimension of size 1 at index {dim}, got {self.size[dim]}")
+            
+    def expand(self, size: 'Size') -> None:
+        _enforce_type(size, Size)
+        for i in range(self.size.dim()): 
+            if self.size[i] > size[i]:
+                raise ValueError(f"Tensor of size {self.size} is too large to be expanded to {size}.")
+            elif self.size[i] < size[i]: 
+                if self.size[i] == 1:
+                    self.size[i] = size[i]
+                    self.stride[i] = 0
+                else: 
+                    raise ValueError(f"Tensor of size {self.size} cannot be expanded to {size}.")
+
     
 def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor: 
     _enforce_type(input, Tensor)
@@ -199,10 +228,6 @@ def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor:
     output.size[dim1], output.size[dim2] = input.size[dim2], input.size[dim1]
     output.stride[dim1], output.stride[dim2] = input.stride[dim2], input.stride[dim1]
     return output
-
-
-
-
     
 
 def cat(tensors: tuple[Tensor, ...], dim: int=0): 
@@ -229,6 +254,7 @@ def cat(tensors: tuple[Tensor, ...], dim: int=0):
         _copy_sublist([], tensor_dims)
         offset += tensors[i].size[dim]
     return result
+
 
 
 def _get_stride(size: 'Size') -> list: 
@@ -275,6 +301,7 @@ def flatten(tensor: Tensor) -> Tensor:
     flat_tensor.size = Size([prod])
     flat_tensor.stride = [1]
     return flat_tensor
+
 
 def _num_tensor(size: 'Size', num: int) -> Tensor: 
     return Tensor(size.total()*[num], size, _get_stride(size))

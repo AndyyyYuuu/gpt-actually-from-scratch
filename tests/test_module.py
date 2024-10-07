@@ -7,4 +7,4 @@ from gpt_from_scratch.tensor import tensor
 
 model = Linear(2, 3)
 
-print(model(tensor([1, 2])))
+print(model(tensor([[1, 2], [2, 3]])))

@@ -15,7 +15,7 @@ class Linear(Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = Parameter(tensor.zeros(in_features, out_features))
-        self.bias = Parameter(tensor.zeros(out_features))
+        self.weight = Parameter(tensor.ones(in_features, out_features))
+        self.bias = Parameter(tensor.ones(out_features))
     def forward(self, x): 
         return F.linear(x, self.weight, self.bias)
