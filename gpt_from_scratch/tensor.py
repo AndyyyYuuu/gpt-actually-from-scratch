@@ -1,6 +1,7 @@
 from typing import Self, Union
 from .utils import _enforce_type
 import builtins
+import random
 
 class Tensor:
 
@@ -307,10 +308,17 @@ def _num_tensor(size: 'Size', num: int) -> Tensor:
     return Tensor(size.total()*[num], size, _get_stride(size))
 
 def zeros(*shape: Union[tuple, list]) -> Tensor: 
+    _enforce_type(shape, tuple, int)
     return _num_tensor(Size(shape), num=0)
 
 def ones(*shape: Union[tuple, list]) -> Tensor:
+    _enforce_type(shape, tuple, int)
     return _num_tensor(Size(shape), num=1)
+
+def rand(*shape: Union[tuple, list]) -> Tensor:
+    _enforce_type(shape, tuple, int)
+    shape = Size(shape)
+    return Tensor([random.getrandbits(1) for i in range(shape.total())], shape, _get_stride(shape))
 
 
 def sum(input: Tensor, dim:int=None) -> Union[float, Tensor]: 
