@@ -3,7 +3,7 @@ from typing import Any, Union
 def _enforce_type(received: Any, expected_type: type, content_type:type=None) -> None: 
 
     """
-    Enforces type checking on the received value, raising ValueError when necessary.
+    Enforces type checking on the received value, raising TypeError when necessary.
 
     Parameters:
     ----------
@@ -22,7 +22,7 @@ def _enforce_type(received: Any, expected_type: type, content_type:type=None) ->
 
     Raises:
     ------
-    ValueError
+    TypeError
         If the received value does not match the expected type or if a 
         collection contains elements of unexpected types.
 
