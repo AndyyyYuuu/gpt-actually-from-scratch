@@ -1,12 +1,14 @@
 from . import functional as F
 from . import tensor
 from .parameter import Parameter
+from .utils import _enforce_type
 
 class Module: 
 
     def __init__(self): 
         self._parameters = {}
         self._modules = {}
+        self.training = False
 
     def __call__(self, *args, **kwargs): 
         return self.forward(*args, **kwargs)
@@ -33,6 +35,16 @@ class Module:
     
     def parameters(self) -> dict:
         return self._parameters
+    
+    def train(self): 
+        for _, submodule in self._modules.items(): 
+            submodule.train()
+        self.training = True
+
+    def eval(self): 
+        for _, submodule in self._modules.items(): 
+            submodule.eval()
+        self.training = False
 
 
 class Linear(Module): 
@@ -49,4 +61,22 @@ class Linear(Module):
     def forward(self, x): 
         return F.linear(x, self.weight, self.bias)
     
+
+class Dropout(Module): 
+
+    def __init__(self, p:float=0.5): 
+        super().__init__()
+        self.p = p
+    
+    def forward(self, x: tensor.Tensor): 
+        _enforce_type(x, tensor.Tensor)
+
+        x = x.clone()
+
+        if self.training: 
+            x += tensor.rand(*x.shape())
+            x *= 1/(1-self.p)
+
+
+        return x
 
