@@ -140,7 +140,10 @@ class Tensor:
                 raise ValueError(f"Tensors must have the same shape for element-wise multiplication. Found {other.size} and {self.size}.")
         else: 
             raise TypeError(f"Expected int, float, or Tensor for scalar or element-wise multiplication. Found {type(other)}.")
-        
+    
+    def __div__(self, other: Union[int, float]) -> Self:
+        _enforce_type(other, float)
+        return self * (1/other)
     
     @staticmethod
     def _data_eq(data1: list, data2: list) -> bool: 

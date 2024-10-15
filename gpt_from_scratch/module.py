@@ -75,7 +75,7 @@ class Dropout(Module):
 
         if self.training: 
             x += tensor.rand(*x.shape())
-            x *= 1/(1-self.p)
+            x /= 1-self.p
 
 
         return x
