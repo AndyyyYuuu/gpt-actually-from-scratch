@@ -1,4 +1,4 @@
-from typing import Self, Union
+from typing import Self, Union, Callable
 from .utils import _enforce_type
 import builtins
 import random
@@ -78,6 +78,18 @@ class Tensor:
     def __eq__(self, other: Self) -> bool: 
         _enforce_type(other, Tensor)
         return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
+    
+    @staticmethod
+    def _element_wise(ten1: Self, ten2: Self, op: Callable): 
+        result = zeros(*ten1.size)
+        def _op_tensors(t1, t2, output, index=[]): 
+            if len(index) == t1.size.dim(): 
+                output[index] = op(t1[index], t2[index])
+            else: 
+                for i in range(t1.size[len(index)]): 
+                    _op_tensors(t1, t2, output, index + [i])
+        _op_tensors(ten1, ten2, result)
+        return result
 
     def __add__(self, other: Union[Self, float]) -> Self: 
         
@@ -107,17 +119,8 @@ class Tensor:
                 _self.expand(other.size)
             else: 
                 other.expand(self.size)
-    
-        result = zeros(*self.size)
-        def _add_tensors(t1, t2, output, index=[]): 
-            if len(index) == t1.size.dim(): 
-                output[index] = t1[index] + t2[index]
-            else: 
-                for i in range(t1.size[len(index)]): 
-                    _add_tensors(t1, t2, output, index + [i])
-        _add_tensors(self, other, result)
-        return result
-            
+
+        return self._element_wise(self, other, lambda t1, t2: t1+t2)
     
     def __mul__(self, other: Union[Self, int, float]) -> Self: 
         if isinstance(other, (float, int)): 
@@ -127,15 +130,7 @@ class Tensor:
             return result 
         elif isinstance(other, self): 
             if other.size == self.size: 
-                result = zeros(*self.size)
-                def _mul_tensors(t1, t2, output, index=[]): 
-                    if len(index) == t1.size.dim(): 
-                        output[index] = t1[index] * t2[index]
-                    else: 
-                        for i in range(t1.size[len(index)]): 
-                            _mul_tensors(t1, t2, output, index + [i])
-                _mul_tensors(self, other, result)
-                return result
+                return self._element_wise(self, other, lambda t1, t2: t1*t2)
             else: 
                 raise ValueError(f"Tensors must have the same shape for element-wise multiplication. Found {other.size} and {self.size}.")
         else: 
