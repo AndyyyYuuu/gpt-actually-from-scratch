@@ -136,9 +136,20 @@ class Tensor:
         else: 
             raise TypeError(f"Expected int, float, or Tensor for scalar or element-wise multiplication. Found {type(other)}.")
     
-    def __div__(self, other: Union[int, float]) -> Self:
+    def __div__(self, other: Union[int, float, Self]) -> Self:
+        if isinstance(other, (int, float)): 
+            return self * (1/other)
+        elif isinstance(other, Tensor): 
+            if not self.size == other.size: 
+                raise ValueError(f"Tensors must have the same shape for element-wise division. Found {other.size} and {self.size}.")
+            return self._element_wise(self, other, lambda t1, t2: t1/t2)
+        else: 
+            _enforce_type(other, Tensor)
+    
+    def __pow__(self, other: Union[int, float]) -> Self: 
         _enforce_type(other, float)
-        return self * (1/other)
+        return self._element_wise(self, other, lambda t1, t2: t1**t2)
+
     
     @staticmethod
     def _data_eq(data1: list, data2: list) -> bool: 
@@ -277,8 +288,8 @@ def _detect_shape(data: list) -> tuple:
 def tensor(data: Union[list, float, int]) -> Tensor: 
     if isinstance(data, tuple): 
         data = list(data)
-    elif isinstance(data, int): 
-        data = data
+    elif isinstance(data, (int, float)): 
+        data = [data]
         size = Size([])
     size = _detect_shape(data)
     data = _flatten_list(data)
