@@ -136,7 +136,7 @@ class Tensor:
         else: 
             raise TypeError(f"Expected int, float, or Tensor for scalar or element-wise multiplication. Found {type(other)}.")
     
-    def __div__(self, other: Union[int, float, Self]) -> Self:
+    def __truediv__(self, other: Union[int, float, Self]) -> Self:
         if isinstance(other, (int, float)): 
             return self * (1/other)
         elif isinstance(other, Tensor): 
@@ -145,10 +145,25 @@ class Tensor:
             return self._element_wise(self, other, lambda t1, t2: t1/t2)
         else: 
             _enforce_type(other, Tensor)
+
+    def __rtruediv__(self, other: Union[int, float, Self]) -> Self:
+        if isinstance(other, (int, float)): 
+            return self * (1/other)
+        elif isinstance(other, Tensor): 
+            if not self.size == other.size: 
+                raise ValueError(f"Tensors must have the same shape for element-wise division. Found {other.size} and {self.size}.")
+            return self._element_wise(self, other, lambda t1, t2: t2/t1)
+        else: 
+            _enforce_type(other, Tensor)
     
     def __pow__(self, other: Union[int, float]) -> Self: 
         _enforce_type(other, float)
         return self._element_wise(self, other, lambda t1, t2: t1**t2)
+    
+    def __rpow__(self, other: Union[int, float]) -> Self:
+        _enforce_type(other, float)
+        other = _num_tensor(self.size, other)
+        return self._element_wise(self, other, lambda t1, t2: t2**t1)
 
     
     @staticmethod
@@ -313,7 +328,7 @@ def flatten(tensor: Tensor) -> Tensor:
     return flat_tensor
 
 
-def _num_tensor(size: 'Size', num: int) -> Tensor: 
+def _num_tensor(size: 'Size', num: Union[int, float]) -> Tensor: 
     return Tensor(size.total()*[num], size, _get_stride(size))
 
 def zeros(*shape: Union[tuple, list]) -> Tensor: 
