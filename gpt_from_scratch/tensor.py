@@ -2,6 +2,7 @@ from typing import Self, Union, Callable
 from .utils import _enforce_type
 import builtins
 import random
+import functools
 
 class Tensor:
 
@@ -78,93 +79,77 @@ class Tensor:
     def __eq__(self, other: Self) -> bool: 
         _enforce_type(other, Tensor)
         return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
-    
+
     @staticmethod
-    def _element_wise(ten1: Self, ten2: Self, op: Callable): 
-        result = zeros(*ten1.size)
-        def _op_tensors(t1, t2, output, index=[]): 
-            if len(index) == t1.size.dim(): 
-                output[index] = op(t1[index], t2[index])
-            else: 
-                for i in range(t1.size[len(index)]): 
-                    _op_tensors(t1, t2, output, index + [i])
-        _op_tensors(ten1, ten2, result)
-        return result
+    def elementwise(op: Callable): 
+        @functools.wraps(op)
+        def _element_wise(t_self: Self, t_other: Self) -> Callable:
+            if isinstance(t_other, Tensor) and t_other.size == Size([]):
+                t_other = t_other[0]
+            if isinstance(t_other, (float, int)): 
+                result = t_self.clone()
+                for i in range(len(result.data)): 
+                    result.data[i] += t_other
+                
+                return result
 
-    def __add__(self, other: Union[Self, float]) -> Self: 
-        
-        if isinstance(other, Tensor) and other.size == Size([]):
-            other = other[0]
-        if isinstance(other, (float, int)): 
-            result = self.clone()
-            for i in range(len(result.data)): 
-                result.data[i] += other
-            
+            if t_self.size != t_other.size: 
+
+                t_self = t_self.clone()
+                _enforce_type(t_other, Tensor)
+                t_other = t_other.clone()
+                while t_other.size.dim() < t_self.size.dim(): 
+                    t_other.unsqueeze(0)
+                while t_other.size.dim() > t_self.size.dim(): 
+                    t_self.unsqueeze(0)
+                
+                for i, j in zip(t_self.size, t_other.size): 
+                    if i != j and i != 1 and j != 1:
+                        raise ValueError(f"Incompatible element-wise operation for tensors of shapes {t_self.size} and {t_other.size}.")
+                
+                if t_self.size.total() < t_other.size.total(): 
+                    t_self.expand(t_other.size)
+                else: 
+                    t_other.expand(t_self.size)
+
+            result = zeros(*t_self.size)
+            def _op_tensors(t1, t2, output, index=[]): 
+                if len(index) == t1.size.dim(): 
+                    output[index] = op(t1[index], t2[index])
+                else: 
+                    for i in range(t1.size[len(index)]): 
+                        _op_tensors(t1, t2, output, index + [i])
+            _op_tensors(t_self, t_other, result)
             return result
+        return _element_wise
 
-        if self.size != other.size: 
-            _self = self.clone()
-            _enforce_type(other, Tensor)
-            other = other.clone()
-            while other.size.dim() < _self.size.dim(): 
-                other.unsqueeze(0)
-            while other.size.dim() > _self.size.dim(): 
-                _self.unsqueeze(0)
-            
-            for i, j in zip(_self.size, other.size): 
-                if i != j and i != 1 and j != 1:
-                    raise ValueError(f"Incompatible addition for tensors of shapes {self.size} and {other.size}.")
-            
-            if _self.size.total() < other.size.total(): 
-                _self.expand(other.size)
-            else: 
-                other.expand(self.size)
-
-        return self._element_wise(self, other, lambda t1, t2: t1+t2)
+    @elementwise
+    def __add__(t1: float, t2: float) -> float: 
+        return t1 + t2
     
-    def __mul__(self, other: Union[Self, int, float]) -> Self: 
-        if isinstance(other, (float, int)): 
-            result = self.clone()
-            for i in range(len(result.data)): 
-                result[i] *= other
-            return result 
-        elif isinstance(other, self): 
-            if other.size == self.size: 
-                return self._element_wise(self, other, lambda t1, t2: t1*t2)
-            else: 
-                raise ValueError(f"Tensors must have the same shape for element-wise multiplication. Found {other.size} and {self.size}.")
-        else: 
-            raise TypeError(f"Expected int, float, or Tensor for scalar or element-wise multiplication. Found {type(other)}.")
+    @elementwise
+    def __mul__(t1: float, t2: float) -> float: 
+        return t1 * t2
     
-    def __truediv__(self, other: Union[int, float, Self]) -> Self:
-        if isinstance(other, (int, float)): 
-            return self * (1/other)
-        elif isinstance(other, Tensor): 
-            if not self.size == other.size: 
-                raise ValueError(f"Tensors must have the same shape for element-wise division. Found {other.size} and {self.size}.")
-            return self._element_wise(self, other, lambda t1, t2: t1/t2)
-        else: 
-            _enforce_type(other, Tensor)
-
-    def __rtruediv__(self, other: Union[int, float, Self]) -> Self:
-        if isinstance(other, (int, float)): 
-            return self * (1/other)
-        elif isinstance(other, Tensor): 
-            if not self.size == other.size: 
-                raise ValueError(f"Tensors must have the same shape for element-wise division. Found {other.size} and {self.size}.")
-            return self._element_wise(self, other, lambda t1, t2: t2/t1)
-        else: 
-            _enforce_type(other, Tensor)
+    @elementwise
+    def __truediv__(t1: float, t2: float) -> float: 
+        return t1 / t2
     
-    def __pow__(self, other: Union[int, float]) -> Self: 
-        _enforce_type(other, float)
-        return self._element_wise(self, other, lambda t1, t2: t1**t2)
+    @elementwise
+    def __rtruediv__(t1: float, t2: float) -> float: 
+        return t2 / t1
     
-    def __rpow__(self, other: Union[int, float]) -> Self:
-        _enforce_type(other, float)
-        other = _num_tensor(self.size, other)
-        return self._element_wise(self, other, lambda t1, t2: t2**t1)
-
+    @elementwise
+    def __pow__(t1: float, t2: float) -> float: 
+        return t1 ** t2
+    
+    @elementwise
+    def __rpow__(t1: float, t2: float) -> float: 
+        return t2 ** t1
+    
+    @elementwise
+    def __neg__(t1: float, t2: float) -> float: 
+        return t2 ** t1
     
     @staticmethod
     def _data_eq(data1: list, data2: list) -> bool: 
