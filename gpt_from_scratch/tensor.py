@@ -180,8 +180,7 @@ class Tensor:
             for j in range(p): 
                 for k in range(m): 
                     c[i,j] += _self[i,k]*other[k,j]
-        if c.size[0] == 1:
-            c.squeeze(0)
+
         return c
     
     def tolist(self) -> Union[list, float]: 
