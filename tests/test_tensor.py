@@ -75,9 +75,9 @@ class TestTensorMatMul(unittest.TestCase):
             _ = a @ b
 
 
-print(sum(tensor([[[1, 2, 3], [4, 5, 6], [7, 8, 9]],[[1, 2, 3], [4, 5, 6], [7, 8, 9]]]), 2))
-print(zeros(2, 3))
-print(cat((tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])), 1))
+#print(sum(tensor([[[1, 2, 3], [4, 5, 6], [7, 8, 9]],[[1, 2, 3], [4, 5, 6], [7, 8, 9]]]), 2, True))
+#print(sum(tensor([[1, 2], [3, 4]]),dim=1))
+#print(cat((tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])), 1))
 #print(Tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
 #unittest.main()
 if __name__ == '__main__':

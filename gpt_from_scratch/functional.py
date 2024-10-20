@@ -13,7 +13,6 @@ def linear(input: tensor.Tensor, weight: tensor.Tensor, bias: tensor.Tensor=None
 def softmax(input: tensor.Tensor, dim: int=None): 
     _enforce_type(input, tensor.Tensor)
     if not dim is None: _enforce_type(dim, int)
-    print(tensor.sum(math.e**input, dim=dim))
-    return math.e**input / tensor.sum(math.e**input, dim=dim)
+    return math.e**input / tensor.sum(math.e**input, dim=dim, keepdim=True)
 
 

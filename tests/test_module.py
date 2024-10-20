@@ -7,7 +7,7 @@ from gpt_from_scratch.module import Linear
 from gpt_from_scratch.tensor import tensor
 
 model = Linear(2, 3)
-
-print(model(tensor([[1, 2], [2, 3]])))
-print(softmax(model(tensor([[1, 2], [2, 3]])), dim=0))
-print(model.parameters())
+x = tensor([[1, 2], [3, 4], [5, 6], [7,8]])
+print(model(x))
+print(softmax(model(x), dim=0))
+#print(model.parameters())
