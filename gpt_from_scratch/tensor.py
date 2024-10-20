@@ -327,8 +327,9 @@ def rand(*shape: Union[tuple, list]) -> Tensor:
     return Tensor([random.getrandbits(1) for i in range(shape.total())], shape, _get_stride(shape))
 
 
-def sum(input: Tensor, dim:int=None) -> Union[float, Tensor]: 
+def sum(input: Tensor, dim:int=None, keepdim:bool=False) -> Union[float, Tensor]: 
     _enforce_type(input, Tensor)
+    _enforce_type(keepdim, bool)
     
     if dim is None: 
         return tensor(builtins.sum(input.data))
@@ -341,10 +342,17 @@ def sum(input: Tensor, dim:int=None) -> Union[float, Tensor]:
     if input.size.dim() == 1: 
         return tensor(builtins.sum(input.data))
     
-    output_tensor = zeros(*(input.size[:dim]+input.size[dim+1:]))
+    if keepdim: 
+        output_tensor = zeros(*(input.size[:dim]+[1,]+input.size[dim+1:]))
+    else:
+        output_tensor = zeros(*(input.size[:dim]+input.size[dim+1:]))
+
     total_slice = [slice(None)] * input.size.dim()
     for i in range(input.size[dim]): 
-        total_slice[dim] = i
+        if keepdim: 
+            total_slice[dim] = slice(i, i+1, None)
+        else: 
+            total_slice[dim] = i
         output_tensor += input[tuple(total_slice)]
     return output_tensor
 
