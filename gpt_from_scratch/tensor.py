@@ -32,9 +32,12 @@ class Tensor:
         while len(index) < self.size.dim(): 
             index.append(slice(None))
         
+
+        one_dims = [] # keep track of which dimensions will be squeezed
         for i in range(len(index)): 
             if isinstance(index[i], int): 
                 index[i] = slice(index[i], index[i]+1, None)
+                one_dims.append(i)
             elif not isinstance(index[i], slice): 
                 raise TypeError(f"Tensor index must be list of int or slice (found {type(index[i])})")
             
@@ -51,14 +54,9 @@ class Tensor:
         _get_slice(index, [], [])
 
         # Squeeze sliced dimensions
-        new_size = []
-        new_stride = []
-        for i in range(self.size.dim()): 
-            if self.size[i] == 1 or result.size[i] != 1:
-                new_size.append(result.size[i])
-                new_stride.append(result.stride[i])
-        result.size = Size(new_size)
-        result.stride = new_stride
+        for i, j in enumerate(one_dims): 
+            result.squeeze(j-i) # -i to calibrate index after removing dimensions
+
         return result
 
 
