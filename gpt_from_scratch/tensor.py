@@ -126,8 +126,16 @@ class Tensor:
         return t1 + t2
     
     @elementwise
+    def __radd__(t1: float, t2: float) -> float: 
+        return t2 + t1
+    
+    @elementwise
     def __mul__(t1: float, t2: float) -> float: 
         return t1 * t2
+
+    @elementwise
+    def __rmul__(t1: float, t2: float) -> float: 
+        return t2 * t1
     
     @elementwise
     def __truediv__(t1: float, t2: float) -> float: 
@@ -135,6 +143,14 @@ class Tensor:
     
     @elementwise
     def __rtruediv__(t1: float, t2: float) -> float: 
+        return t2 / t1
+    
+    @elementwise
+    def __floordiv__(t1: float, t2: float) -> float: 
+        return t1 / t2
+    
+    @elementwise
+    def __rfloordiv__(t1: float, t2: float) -> float: 
         return t2 / t1
     
     @elementwise
