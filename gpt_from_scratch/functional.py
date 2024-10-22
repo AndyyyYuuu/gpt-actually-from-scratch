@@ -15,4 +15,6 @@ def softmax(input: tensor.Tensor, dim: int=None):
     if not dim is None: _enforce_type(dim, int)
     return math.e**input / tensor.sum(math.e**input, dim=dim, keepdim=True)
 
-
+def relu(input: tensor.Tensor): 
+    _enforce_type(input, tensor.Tensor)
+    return input.relu()

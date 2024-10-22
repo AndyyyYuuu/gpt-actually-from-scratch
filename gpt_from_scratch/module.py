@@ -80,3 +80,11 @@ class Dropout(Module):
 
         return x
 
+class ReLU(Module): 
+
+    def __init__(self): 
+        super().__init__()
+    
+    def forward(self, x: tensor.Tensor): 
+        _enforce_type(x, tensor.Tensor)
+        return F.relu(x)

@@ -197,6 +197,13 @@ class Tensor:
 
         return c
     
+    def relu(self) -> Self: 
+        result = self.clone()
+        for i in range(len(result.data)): 
+            if result.data[i] < 0: 
+                result.data[i] = 0 
+        return result
+    
     def tolist(self) -> Union[list, float]: 
         def build_list(dim, index): 
             if dim == self.size.dim(): 
