@@ -47,6 +47,19 @@ class Module:
         self.training = False
 
 
+class Sequential(Module): 
+    def __init__(self, modules: list): 
+        super().__init__()
+        _enforce_type(modules, tuple, Module)
+        self.modules = modules
+
+    def forward(self, x):
+        for module in self.modules:
+            x = module(x)
+        return x
+
+
+
 class Linear(Module): 
 
     def __init__(self, in_features: int, out_features: int): 
