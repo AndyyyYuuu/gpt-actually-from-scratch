@@ -13,19 +13,24 @@ class Module:
     def __call__(self, *args, **kwargs): 
         return self.forward(*args, **kwargs)
     
-    def __setattr__(self, name: str, value: any) -> None:
+    def __setattr__(self, name: str, value: any, base: bool=True) -> None:
+
         if isinstance(value, Module):
             self._modules[name] = value
-            sub_params = value.parameters()
             new_dict = {}
             for param_name, param_value in value.parameters().items():
                 new_dict[f"{name}.{param_name}"] = param_value
-            self.parameters = new_dict | self.parameters
-            
+            self._parameters = new_dict | self._parameters
+
+        elif isinstance(value, (list, tuple)): 
+            for i, v in enumerate(value): 
+                self.__setattr__(f"{name}.{i}", v, base=False)
+        
         elif isinstance(value, Parameter):
             self._parameters[name] = value
         
-        super(Module, self).__setattr__(name, value)
+        if base: 
+            super(Module, self).__setattr__(name, value)
     
     def forward(self): 
         raise NotImplementedError("method `forward` not implemented for subclass of Module")
