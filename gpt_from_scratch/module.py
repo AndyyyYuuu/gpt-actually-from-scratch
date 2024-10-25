@@ -18,7 +18,7 @@ class Module:
         if isinstance(value, Module):
             self._modules[name] = value
             new_dict = {}
-            for param_name, param_value in value.parameters().items():
+            for param_name, param_value in value.state_dict().items():
                 new_dict[f"{name}.{param_name}"] = param_value
             self._parameters = new_dict | self._parameters
 
@@ -38,7 +38,7 @@ class Module:
     def register_parameter(self, name: str, value: Parameter) -> None:
         self._parameters[name] = value
     
-    def parameters(self) -> dict:
+    def state_dict(self) -> dict:
         return self._parameters
     
     def train(self): 
@@ -73,8 +73,6 @@ class Linear(Module):
         self.out_features = out_features
         self.weight = Parameter(tensor.ones(in_features, out_features))
         self.bias = Parameter(tensor.ones(out_features))
-        #self.register_parameter("weight", self.weight)
-        #self.register_parameter("bias", self.bias)
 
     def forward(self, x): 
         return F.linear(x, self.weight, self.bias)
