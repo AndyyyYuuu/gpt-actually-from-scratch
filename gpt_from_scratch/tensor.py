@@ -349,6 +349,11 @@ def rand(*shape: Union[tuple, list]) -> Tensor:
     shape = Size(shape)
     return Tensor([random.getrandbits(1) for i in range(shape.total())], shape, _get_stride(shape))
 
+def randn(*shape: Union[tuple, list]) -> Tensor:
+    _enforce_type(shape, tuple, int)
+    shape = Size(shape)
+    return Tensor([random.normalvariate() for i in range(shape.total())], shape, _get_stride(shape))
+
 
 def sum(input: Tensor, dim:int=None, keepdim:bool=False) -> Union[float, Tensor]: 
     _enforce_type(input, Tensor)

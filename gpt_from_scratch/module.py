@@ -42,7 +42,6 @@ class Module:
         return self._parameters
     
     def load_state_dict(self, state_dict: dict) -> None:
-
         def load_recur(_data: dict, prefix: str="") -> None: 
             for name, value in _data.items():
                 full_name = prefix + name
@@ -97,8 +96,8 @@ class Linear(Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = Parameter(tensor.ones(in_features, out_features))
-        self.bias = Parameter(tensor.ones(out_features))
+        self.weight = Parameter(tensor.randn(in_features, out_features))
+        self.bias = Parameter(tensor.randn(out_features))
 
     def forward(self, x): 
         return F.linear(x, self.weight, self.bias)
