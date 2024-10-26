@@ -42,28 +42,35 @@ class Module:
         return self._parameters
     
     def load_state_dict(self, state_dict: dict) -> None:
-        def load_recur(_data: dict, prefix: str="") -> None: 
-            for name, value in _data.items():
-                full_name = prefix + name
-                if full_name in state_dict: 
-                    if _data[full_name].shape == value.shape:
-                        self._parameters[full_name].copy(value)
-                    else:
-                        raise ValueError(f"Shape mismatch for '{full_name}' in state_dict: "
-                                         f"expected {value.shape}, got {value[full_name].shape}")
-                else: 
-                    print(f"Warning: \"{full_name}\" not found in state_dict")
-
         _enforce_type(state_dict, dict)
-        load_recur(state_dict)
-        '''
-        for key, value in state_dict.items(): 
-            split_key = key.split(".")
-            if len(split_key) == 1 and isinstance(value, Parameter): 
-                super(Module, self).__setattr__(key, value)
-        '''
-        
+        for name, value in state_dict.items():
+            if name in state_dict: 
+                
+                split_name = name.split(".")
+                ref = self
+                for i, word in enumerate(split_name):
+                    if isinstance(ref, Parameter): 
+                        break
 
+                    elif isinstance(ref, Module): 
+                        ref = getattr(ref, word)
+                    
+                    elif isinstance(ref, (list, tuple)):
+                        if word.isnumeric() and int(word) < len(ref):
+                            ref = ref[int(word)]
+                        else:
+                            print(f"Warning: cannot use index {name} on iterable of size {len(ref)}")
+
+                if isinstance(ref, Parameter): 
+                    if ref.size == value.size:
+                        ref.copy(value)
+                        
+                    else:
+                        raise ValueError(f"Shape mismatch for '{name}' in state_dict: "
+                                         f"expected {value.size}, got {ref.size}")
+
+            else: 
+                print(f"Warning: \"{name}\" not found in state_dict")
 
         
     def train(self): 
