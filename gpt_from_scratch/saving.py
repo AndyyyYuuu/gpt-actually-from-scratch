@@ -4,7 +4,7 @@ from .utils import _enforce_type
 def save(value: dict, location: str) -> None: 
     _enforce_type(value, dict)
     _enforce_type(location, str)
-    with open(location, 'ab') as file: 
+    with open(location, 'wb') as file: 
         pickle.dump(value, file)
     file.close()
 
