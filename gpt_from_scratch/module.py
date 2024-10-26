@@ -41,6 +41,32 @@ class Module:
     def state_dict(self) -> dict:
         return self._parameters
     
+    def load_state_dict(self, state_dict: dict) -> None:
+
+        def load_recur(_data: dict, prefix: str="") -> None: 
+            for name, value in _data.items():
+                full_name = prefix + name
+                if full_name in state_dict: 
+                    if _data[full_name].shape == value.shape:
+                        self._parameters[full_name].copy(value)
+                    else:
+                        raise ValueError(f"Shape mismatch for '{full_name}' in state_dict: "
+                                         f"expected {value.shape}, got {value[full_name].shape}")
+                else: 
+                    print(f"Warning: \"{full_name}\" not found in state_dict")
+
+        _enforce_type(state_dict, dict)
+        load_recur(state_dict)
+        '''
+        for key, value in state_dict.items(): 
+            split_key = key.split(".")
+            if len(split_key) == 1 and isinstance(value, Parameter): 
+                super(Module, self).__setattr__(key, value)
+        '''
+        
+
+
+        
     def train(self): 
         for _, submodule in self._modules.items(): 
             submodule.train()

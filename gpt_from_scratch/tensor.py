@@ -66,7 +66,7 @@ class Tensor:
         self.data[flat_index] = value
 
     def clone(self) -> Self: 
-        return Tensor(self.data, self.size.clone(), self.stride.copy())
+        return Tensor(self.data.copy(), self.size.clone(), self.stride.copy())
 
     def shape(self) -> 'Size': 
         return self.size

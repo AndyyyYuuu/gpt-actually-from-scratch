@@ -7,3 +7,12 @@ class Parameter(Tensor):
         
         _enforce_type(value, Tensor)
         super().__init__(value.data, value.size, value.stride)
+
+    def __repr__(self): 
+        return f"Parameter(shape={self.shape()}, data={self.tolist()})"
+    
+    def copy(self, other): 
+        self.data = other.data.copy()
+        self.size = other.size.clone()
+        self.stride = other.stride.copy()
+    
