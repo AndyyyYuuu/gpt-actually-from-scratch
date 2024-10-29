@@ -1,3 +1,4 @@
+from typing import Any
 from . import functional as F
 from . import tensor
 from .parameter import Parameter
@@ -52,17 +53,21 @@ class Module:
                     if isinstance(ref, Parameter): 
                         break
 
-                    elif isinstance(ref, Module): 
-                        ref = getattr(ref, word)
-                    
-                    elif isinstance(ref, (list, tuple)):
+                    elif isinstance(ref, (list, tuple, Sequential)):
                         if word.isnumeric() and int(word) < len(ref):
                             ref = ref[int(word)]
                         else:
                             print(f"Warning: cannot use index {name} on iterable of size {len(ref)}")
 
+                    elif isinstance(ref, Module): 
+                        ref = getattr(ref, word)
+                    
+                    
+
                 if isinstance(ref, Parameter): 
+                    print(ref, value)
                     if ref.size == value.size:
+                        
                         ref.copy(value)
                         
                     else:
@@ -85,10 +90,19 @@ class Module:
 
 
 class Sequential(Module): 
-    def __init__(self, modules: list): 
+    def __init__(self, *modules: list): 
         super().__init__()
         _enforce_type(modules, tuple, Module)
         self.modules = modules
+    
+    def __getitem__(self, index: int) -> Module:
+        if isinstance(index, int): 
+            return self.modules[index]
+        else: 
+            return super().__getitem__(index)
+    
+    def __len__(self) -> int:
+        return len(self.modules)
 
     def forward(self, x):
         for module in self.modules:
