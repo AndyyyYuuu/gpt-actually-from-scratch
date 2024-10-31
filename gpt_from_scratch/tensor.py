@@ -165,6 +165,30 @@ class Tensor:
     def __neg__(t1: float, t2: float) -> float: 
         return t2 ** t1
     
+    @elementwise
+    def __lt__(t1: float, t2: float) -> bool: 
+        return t1 < t2
+    
+    @elementwise
+    def __gt__(t1: float, t2: float) -> bool: 
+        return t1 > t2
+    
+    @elementwise
+    def __le__(t1: float, t2: float) -> bool: 
+        return t1 >= t2
+    
+    @elementwise
+    def __ge__(t1: float, t2: float) -> bool: 
+        return t1 <= t2
+    
+    @elementwise
+    def __eq__(t1: float, t2: float) -> bool: 
+        return t1 == t2
+    
+    @elementwise
+    def __ne__(t1: float, t2: float) -> bool: 
+        return t1 != t2
+    
     @staticmethod
     def _data_eq(data1: list, data2: list) -> bool: 
         
@@ -196,6 +220,12 @@ class Tensor:
                     c[i,j] += _self[i,k]*other[k,j]
 
         return c
+    
+    def __round__(self) -> Self: 
+        result = self.clone()
+        for i in range(len(result.data)): 
+            result.data[i] = round(result.data[i])
+        return result
     
     def relu(self) -> Self: 
         result = self.clone()
