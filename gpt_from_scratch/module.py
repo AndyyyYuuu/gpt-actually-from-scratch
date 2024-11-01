@@ -113,12 +113,15 @@ class Sequential(Module):
 
 class Linear(Module): 
 
-    def __init__(self, in_features: int, out_features: int): 
+    def __init__(self, in_features: int, out_features: int, bias: bool=True) -> None: 
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.weight = Parameter(tensor.randn(in_features, out_features))
-        self.bias = Parameter(tensor.randn(out_features))
+        if bias: 
+            self.bias = Parameter(tensor.randn(out_features))
+        else: 
+            self.bias = tensor.zeros(out_features)
 
     def forward(self, x): 
         return F.linear(x, self.weight, self.bias)
