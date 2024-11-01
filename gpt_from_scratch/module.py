@@ -136,8 +136,9 @@ class Dropout(Module):
         x = x.clone()
 
         if self.training: 
-            x += tensor.rand(*x.shape())
             x /= 1-self.p
+            x *= 1-self.p+round(tensor.rand(*x.shape()))
+            
 
 
         return x
