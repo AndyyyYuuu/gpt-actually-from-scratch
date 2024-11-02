@@ -11,7 +11,7 @@ class Tensor:
         _enforce_type(data, list, float)
         _enforce_type(size, Size)
         _enforce_type(stride, tuple, float)
-        self.size = size
+        self.shape = size
         self.data = data
         self.stride = stride
     
@@ -23,13 +23,13 @@ class Tensor:
         _enforce_type(index, tuple)
         index = list(index)
         
-        if all([isinstance(i, int) for i in index]) and len(index) == self.size.dim():
+        if all([isinstance(i, int) for i in index]) and len(index) == self.shape.dim():
             flat_index = builtins.sum([i*j for i, j in zip(self.stride, list(index))])
             return self.data[flat_index]
         
-        if len(index) > self.size.dim(): 
-            raise IndexError(f"Tensor index out of range (expected {self.size.dim()} dimensions, found {len(index)})")
-        while len(index) < self.size.dim(): 
+        if len(index) > self.shape.dim(): 
+            raise IndexError(f"Tensor index out of range (expected {self.shape.dim()} dimensions, found {len(index)})")
+        while len(index) < self.shape.dim(): 
             index.append(slice(None))
         
 
@@ -41,14 +41,14 @@ class Tensor:
             elif not isinstance(index[i], slice): 
                 raise TypeError(f"Tensor index must be list of int or slice (found {type(index[i])})")
             
-        result = zeros(*[len(range(self.size[i])[index[i]]) for i in range(len(index))])
+        result = zeros(*[len(range(self.shape[i])[index[i]]) for i in range(len(index))])
         
 
         def _get_slice(slices: list[slice], pos_self: list[int], pos_result: list[int], depth=0) -> None: 
             if len(slices) == 0: 
                 result[pos_result] = self[pos_self]
             else: 
-                for i,j in enumerate(range(self.size[depth])[slices[0]]): 
+                for i,j in enumerate(range(self.shape[depth])[slices[0]]): 
                     _get_slice(slices[1:], pos_self+[j], pos_result+[i], depth+1)
         
         _get_slice(index, [], [])
@@ -66,23 +66,23 @@ class Tensor:
         self.data[flat_index] = value
 
     def clone(self) -> Self: 
-        return Tensor(self.data.copy(), self.size.clone(), self.stride.copy())
+        return Tensor(self.data.copy(), self.shape.clone(), self.stride.copy())
 
-    def shape(self) -> 'Size': 
-        return self.size
+    def size(self) -> 'Size': 
+        return self.shape
     
     def __repr__(self) -> str: 
-        return f"Tensor(shape={self.shape()}, data={self.tolist()})"
+        return f"Tensor(shape={self.shape}, data={self.tolist()})"
     
     def __eq__(self, other: Self) -> bool: 
         _enforce_type(other, Tensor)
-        return other.size == self.size and all([i==j for i, j in zip(self.data, other.data)])
+        return other.shape == self.shape and all([i==j for i, j in zip(self.data, other.data)])
 
     @staticmethod
     def elementwise(op: Callable): 
         @functools.wraps(op)
         def _element_wise(t_self: Self, t_other: Self) -> Callable:
-            if isinstance(t_other, Tensor) and t_other.size == Size([]):
+            if isinstance(t_other, Tensor) and t_other.shape == Size([]):
                 t_other = t_other[0]
             if isinstance(t_other, (float, int)): 
                 result = t_self.clone()
@@ -91,31 +91,31 @@ class Tensor:
                 
                 return result
 
-            if t_self.size != t_other.size: 
+            if t_self.shape != t_other.shape: 
 
                 t_self = t_self.clone()
                 _enforce_type(t_other, Tensor)
                 t_other = t_other.clone()
-                while t_other.size.dim() < t_self.size.dim(): 
+                while t_other.shape.dim() < t_self.shape.dim(): 
                     t_other.unsqueeze(0)
-                while t_other.size.dim() > t_self.size.dim(): 
+                while t_other.shape.dim() > t_self.shape.dim(): 
                     t_self.unsqueeze(0)
                 
-                for i, j in zip(t_self.size, t_other.size): 
+                for i, j in zip(t_self.shape, t_other.shape): 
                     if i != j and i != 1 and j != 1:
-                        raise ValueError(f"Incompatible element-wise operation for tensors of shapes {t_self.size} and {t_other.size}.")
+                        raise ValueError(f"Incompatible element-wise operation for tensors of shapes {t_self.shape} and {t_other.shape}.")
                 
-                if t_self.size.total() < t_other.size.total(): 
-                    t_self.expand(t_other.size)
+                if t_self.shape.total() < t_other.shape.total(): 
+                    t_self.expand(t_other.shape)
                 else: 
-                    t_other.expand(t_self.size)
+                    t_other.expand(t_self.shape)
 
-            result = zeros(*t_self.size)
+            result = zeros(*t_self.shape)
             def _op_tensors(t1, t2, output, index=[]): 
-                if len(index) == t1.size.dim(): 
+                if len(index) == t1.shape.dim(): 
                     output[index] = op(t1[index], t2[index])
                 else: 
-                    for i in range(t1.size[len(index)]): 
+                    for i in range(t1.shape[len(index)]): 
                         _op_tensors(t1, t2, output, index + [i])
             _op_tensors(t_self, t_other, result)
             return result
@@ -201,18 +201,18 @@ class Tensor:
     
     def __matmul__(self, other: Self) -> Self:
         _self = self.clone()
-        if _self.size.dim() <= 1: 
+        if _self.shape.dim() <= 1: 
             _self.unsqueeze(0)
-        if other.size.dim() <= 1: 
+        if other.shape.dim() <= 1: 
             other.unsqueeze(0)
-        if _self.size.dim() >= 2 and _self.size[1] != other.size[0]: 
-            if other.size[1] == _self.size[0]: 
+        if _self.shape.dim() >= 2 and _self.shape[1] != other.shape[0]: 
+            if other.shape[1] == _self.shape[0]: 
                 _self, other = other, _self
             else: 
-                raise ValueError(f"The number of columns in the first matrix must equal the number of rows in the second (found {_self.size} and {other.size})")
-        n = _self.size[0]
-        m = other.size[0]
-        p = other.size[1]
+                raise ValueError(f"The number of columns in the first matrix must equal the number of rows in the second (found {_self.shape} and {other.shape})")
+        n = _self.shape[0]
+        m = other.shape[0]
+        p = other.shape[1]
         c = zeros(n, p)
         for i in range(n): 
             for j in range(p): 
@@ -236,14 +236,14 @@ class Tensor:
     
     def tolist(self) -> Union[list, float]: 
         def build_list(dim, index): 
-            if dim == self.size.dim(): 
+            if dim == self.shape.dim(): 
                 return self[index]
-            return [build_list(dim + 1, index + [i]) for i in range(self.size[dim])]
+            return [build_list(dim + 1, index + [i]) for i in range(self.shape[dim])]
         return build_list(0, [])
 
     def unsqueeze(self, dim: int) -> None: 
         _enforce_type(dim, int)
-        self.size.data.insert(dim, 1)
+        self.shape.data.insert(dim, 1)
         if dim != 0: 
             self.stride.insert(dim, self.stride[dim-1])
         else: 
@@ -253,31 +253,31 @@ class Tensor:
         if dim is None: 
             new_size = []
             new_stride = []
-            for i in range(self.size.dim()): 
-                if self.size[i] != 1: 
-                    new_size.append(self.size[i])
+            for i in range(self.shape.dim()): 
+                if self.shape[i] != 1: 
+                    new_size.append(self.shape[i])
                     new_stride.append(self.stride[i])
-            self.size = Size(new_size)
+            self.shape = Size(new_size)
             self.stride = new_stride
         else: 
             _enforce_type(dim, int)
-            if self.size[dim] == 1:
+            if self.shape[dim] == 1:
                 self.stride.pop(dim)
-                self.size.data.pop(dim)
+                self.shape.data.pop(dim)
             else: 
-                raise ValueError(f"squeeze() expected a dimension of size 1 at index {dim}, got {self.size[dim]}")
+                raise ValueError(f"squeeze() expected a dimension of size 1 at index {dim}, got {self.shape[dim]}")
             
     def expand(self, size: 'Size') -> None:
         _enforce_type(size, Size)
-        for i in range(self.size.dim()): 
-            if self.size[i] > size[i]:
-                raise ValueError(f"Tensor of size {self.size} is too large to be expanded to {size}.")
-            elif self.size[i] < size[i]: 
-                if self.size[i] == 1:
-                    self.size[i] = size[i]
+        for i in range(self.shape.dim()): 
+            if self.shape[i] > size[i]:
+                raise ValueError(f"Tensor of size {self.shape} is too large to be expanded to {size}.")
+            elif self.shape[i] < size[i]: 
+                if self.shape[i] == 1:
+                    self.shape[i] = size[i]
                     self.stride[i] = 0
                 else: 
-                    raise ValueError(f"Tensor of size {self.size} cannot be expanded to {size}.")
+                    raise ValueError(f"Tensor of size {self.shape} cannot be expanded to {size}.")
 
     
 def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor: 
@@ -285,7 +285,7 @@ def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor:
     _enforce_type(dim1, int)
     _enforce_type(dim2, int)
     output = input.clone()
-    output.size[dim1], output.size[dim2] = input.size[dim2], input.size[dim1]
+    output.shape[dim1], output.shape[dim2] = input.shape[dim2], input.shape[dim1]
     output.stride[dim1], output.stride[dim2] = input.stride[dim2], input.stride[dim1]
     return output
     
@@ -294,12 +294,12 @@ def cat(tensors: tuple[Tensor, ...], dim: int=0):
     _enforce_type(tensors, tuple, Tensor)
     _enforce_type(dim, int)
     for t in tensors[1:]: 
-        for i in range(t.size.dim()): 
-            if i != dim and t.size[i] != tensors[0].size[i]: 
-                raise ValueError(f"Tensors of sizes {tensors[0].size, t.size} cannot be concatenated.")
-    tensor_dims = tensors[0].size.dim()
-    new_size = [tensors[0].size[i] if i != dim else builtins.sum([t.size[i] for t in tensors]) for i in range(tensor_dims)]
-    result = zeros(*new_size)
+        for i in range(t.shape.dim()): 
+            if i != dim and t.shape[i] != tensors[0].shape[i]: 
+                raise ValueError(f"Tensors of sizes {tensors[0].shape, t.shape} cannot be concatenated.")
+    tensor_dims = tensors[0].shape.dim()
+    new_shape = [tensors[0].shape[i] if i != dim else builtins.sum([t.shape[i] for t in tensors]) for i in range(tensor_dims)]
+    result = zeros(*new_shape)
 
     offset = 0  # Offset value for copying: sum of previous tensor lengths
     for i in range(len(tensors)): 
@@ -309,10 +309,10 @@ def cat(tensors: tuple[Tensor, ...], dim: int=0):
                 result_pos[dim] += offset
                 result[result_pos] = tensors[i][pos]
             else: 
-                for j in range(tensors[i].size[-depth]): 
+                for j in range(tensors[i].shape[-depth]): 
                     _copy_sublist(pos+[j], depth-1)
         _copy_sublist([], tensor_dims)
-        offset += tensors[i].size[dim]
+        offset += tensors[i].shape[dim]
     return result
 
 
@@ -356,9 +356,9 @@ def flatten(tensor: Tensor) -> Tensor:
     _enforce_type(tensor, Tensor)
     flat_tensor = tensor.clone()
     prod = 1
-    for i in tensor.size: 
+    for i in tensor.shape: 
         prod*=i
-    flat_tensor.size = Size([prod])
+    flat_tensor.shape = Size([prod])
     flat_tensor.stride = [1]
     return flat_tensor
 
@@ -394,19 +394,19 @@ def sum(input: Tensor, dim:int=None, keepdim:bool=False) -> Union[float, Tensor]
 
     _enforce_type(dim, int)
 
-    if dim >= input.size.dim(): 
-        raise ValueError(f"dimension {dim} out of range for {input.size.dim()}-d Tensor")
+    if dim >= input.shape.dim(): 
+        raise ValueError(f"dimension {dim} out of range for {input.shape.dim()}-d Tensor")
     
-    if input.size.dim() == 1: 
+    if input.shape.dim() == 1: 
         return tensor(builtins.sum(input.data))
     
     if keepdim: 
-        output_tensor = zeros(*(input.size[:dim]+[1,]+input.size[dim+1:]))
+        output_tensor = zeros(*(input.shape[:dim]+[1,]+input.shape[dim+1:]))
     else:
-        output_tensor = zeros(*(input.size[:dim]+input.size[dim+1:]))
+        output_tensor = zeros(*(input.shape[:dim]+input.shape[dim+1:]))
 
-    total_slice = [slice(None)] * input.size.dim()
-    for i in range(input.size[dim]): 
+    total_slice = [slice(None)] * input.shape.dim()
+    for i in range(input.shape[dim]): 
         if keepdim: 
             total_slice[dim] = slice(i, i+1, None)
         else: 
