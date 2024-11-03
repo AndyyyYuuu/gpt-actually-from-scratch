@@ -66,13 +66,13 @@ class Module:
 
                 if isinstance(ref, Parameter): 
                     print(ref, value)
-                    if ref.size == value.size:
+                    if all([i==j for i, j in zip(ref.size(), value.size())]): # FIXME: 
                         
-                        ref.copy(value)
+                        ref.copy(value) 
                         
                     else:
                         raise ValueError(f"Shape mismatch for '{name}' in state_dict: "
-                                         f"expected {value.size}, got {ref.size}")
+                                         f"expected {value.size()}, got {ref.size()}")
 
             else: 
                 print(f"Warning: \"{name}\" not found in state_dict")
@@ -117,7 +117,7 @@ class Linear(Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = Parameter(tensor.randn(in_features, out_features))
+        self.weight = Parameter(tensor.randn(out_features, in_features))
         if bias: 
             self.bias = Parameter(tensor.randn(out_features))
         else: 

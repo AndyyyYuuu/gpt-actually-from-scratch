@@ -7,7 +7,8 @@ def linear(input: tensor.Tensor, weight: tensor.Tensor, bias: tensor.Tensor=None
     _enforce_type(input, tensor.Tensor)
     _enforce_type(weight, tensor.Tensor)
     _enforce_type(bias, tensor.Tensor)
-    return input @ weight + bias
+    print(input.shape, weight.shape, bias.shape)
+    return weight @ input + bias
 
 
 def softmax(input: tensor.Tensor, dim: int=None): 
