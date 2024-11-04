@@ -68,7 +68,9 @@ class Module:
                     print(ref, value)
                     if all([i==j for i, j in zip(ref.size(), value.size())]): # FIXME: 
                         
-                        ref.copy(value) 
+                        ref.data = list(value.flatten()) 
+                        ref.stride = list(value.stride())
+                        ref.shape = tensor.Size(list(value.size()))
                         
                     else:
                         raise ValueError(f"Shape mismatch for '{name}' in state_dict: "
