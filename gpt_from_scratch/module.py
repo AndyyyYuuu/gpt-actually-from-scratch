@@ -101,6 +101,13 @@ class Sequential(Module):
         else: 
             return super().__getitem__(index)
     
+    def __setitem__(self, index: int, value: Module) -> None: 
+        _enforce_type(value, Module)
+        if isinstance(index, int): 
+            self.modules[index] = value
+        else: 
+            super().__setitem__(index, value)
+    
     def __len__(self) -> int:
         return len(self.modules)
 
