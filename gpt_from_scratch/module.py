@@ -65,10 +65,8 @@ class Module:
                     
 
                 if isinstance(ref, Parameter): 
-                    print(ref, value)
-                    if all([i==j for i, j in zip(ref.size(), value.size())]): # FIXME: 
-                        
-                        ref.data = list(value.flatten()) 
+                    if all([i==j for i, j in zip(ref.size(), value.size())]):
+                        ref.data = value.flatten().tolist()
                         ref.stride = list(value.stride())
                         ref.shape = tensor.Size(list(value.size()))
                         
