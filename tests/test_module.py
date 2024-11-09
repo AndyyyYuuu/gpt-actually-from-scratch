@@ -8,7 +8,7 @@ from gpt_from_scratch.tensor import tensor
 from gpt_from_scratch.saving import save, load
 from gpt_from_scratch.parameter import Parameter
 
-x = tensor([[1, 2, 3], [3, 4, 5]])
+x = tensor([[1, 2], [3, 4], [6, 7], [9, 10]])
 
 #print(net(x))
 #print(softmax(model(x), dim=0))
@@ -26,8 +26,11 @@ net1 = FeedForward(2, 3, 2)
 net2 = Linear(2, 3)
 print(net2(x))
 
+print(net1(x))
+
 loaded = load("save.pt")
 print(loaded)
 net1.load_state_dict(loaded)
-print(vars(net1))
-print(net1.feedforward.modules[0].weight)
+
+print("\n2:", net1.feedforward.modules[0].weight)
+print(net1(x))
