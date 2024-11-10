@@ -4,11 +4,12 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../'
 
 from gpt_from_scratch.functional import softmax
 from gpt_from_scratch.module import Linear, Sequential, Module
-from gpt_from_scratch.tensor import tensor
+from gpt_from_scratch.tensor import tensor, randn
 from gpt_from_scratch.saving import save, load
 from gpt_from_scratch.parameter import Parameter
+from gpt_from_scratch.architecture import *
 
-x = tensor([[1, 2], [3, 4], [6, 7], [9, 10]])
+x = tensor.tensor([[1, 2], [3, 4], [6, 7], [9, 10]])
 
 #print(net(x))
 #print(softmax(model(x), dim=0))
@@ -22,15 +23,22 @@ class FeedForward(Module):
     def forward(self, x): 
         return self.feedforward(x)
 
-net1 = FeedForward(2, 3, 2)
-net2 = Linear(2, 3)
-print(net2(x))
+def test_load():
+    net1 = FeedForward(2, 3, 2)
+    net2 = Linear(2, 3)
+    print(net2(x))
 
-print(net1(x))
+    print(net1(x))
 
-loaded = load("save.pt")
-print(loaded)
-net1.load_state_dict(loaded)
+    loaded = load("save.pt")
+    print(loaded)
+    net1.load_state_dict(loaded)
 
-print("\n2:", net1.feedforward.modules[0].weight)
-print(net1(x))
+    print("\n2:", net1.feedforward.modules[0].weight)
+    print(net1(x))
+
+def test_attention_h():
+    x1 = randn(4, 3, 2)
+    net3 = AttentionHead(2, 2)
+    print(net3(x1))
+test_attention_h()

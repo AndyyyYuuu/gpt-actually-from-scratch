@@ -4,9 +4,9 @@ from .parameter import Parameter
 from .utils import _enforce_type
 
 
-class AttentionHead(tensor.Module): 
+class AttentionHead(module.Module): 
 
-    def __init__(self, head_size: int, n_embed) -> None:
+    def __init__(self, head_size: int, n_embed: int) -> None:
         super().__init__()
         self.key = module.Linear(n_embed, head_size, bias=False)
         self.query = module.Linear(n_embed, head_size, bias=False)
