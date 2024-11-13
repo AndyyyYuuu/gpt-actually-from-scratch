@@ -75,6 +75,52 @@ class TestTensorMatMul(unittest.TestCase):
             _ = a @ b
 
 
+class TestBatchMatrixMultiplication(unittest.TestCase):
+
+    def test_2d_matrices_multiplication(self):
+        A = tensor([[1, 2], [3, 4]])
+        B = tensor([[5, 6], [7, 8]])
+        expected = tensor([[19, 22], [43, 50]])
+        result = A @ B
+        self.assertEqual(result, expected)
+
+    def test_3d_matrices_multiplication(self):
+        A = tensor([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+        B = tensor([[[9, 10], [11, 12]], [[13, 14], [15, 16]]])
+        expected = tensor([[[31, 34], [71, 78]], [[171, 186], [231, 254]]])
+        result = A @ B
+        self.assertEqual(result, expected)
+
+    def test_2d_and_3d_matrices_multiplication(self):
+        A = tensor([[1, 2], [3, 4]])
+        B = tensor([[[5, 6], [7, 8]], [[9, 10], [11, 12]]])
+        expected = tensor([[[19, 22], [43, 50]], [[39, 44], [79, 88]]])
+        result = A @ B
+        self.assertEqual(result, expected)
+
+    def test_single_batch_3d_matrices_multiplication(self):
+        A = tensor([[[1, 2], [3, 4]]])
+        B = tensor([[[5, 6], [7, 8]]])
+        expected = tensor([[[19, 22], [43, 50]]])
+        result = A @ B
+        self.assertEqual(result, expected)
+
+    def test_2d_with_transpose(self):
+        A = tensor([[1, 2], [3, 4]])
+        B = tensor([[5, 6], [7, 8]])
+        B_T = B.transpose(-2, -1)
+        expected = tensor([[19, 43], [22, 50]])
+        result = A @ B_T
+        self.assertEqual(result, expected)
+
+    def test_batch_3d_and_single_2d_multiplication(self):
+        A = tensor([[[1, 2]], [[3, 4]], [[5, 6]]])
+        B = tensor([[7, 8], [9, 10]])
+        expected = tensor([[[25, 28]], [[43, 48]], [[61, 68]]])
+        result = A @ B
+        self.assertEqual(result, expected)
+
+
 #print(sum(tensor([[[1, 2, 3], [4, 5, 6], [7, 8, 9]],[[1, 2, 3], [4, 5, 6], [7, 8, 9]]]), 2, True))
 #print(sum(tensor([[1, 2], [3, 4]]),dim=1))
 #print(cat((tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])), 1))
