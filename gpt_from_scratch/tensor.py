@@ -201,24 +201,43 @@ class Tensor:
     
     def __matmul__(self, other: Self) -> Self:
         _self = self.clone()
-        if _self.shape.dim() <= 1: 
+        _other = other.clone()
+
+        # Whether inputs came with batch dimension: used to determine whether to output with batch dimension
+        has_batch = _self.shape.dim() >= 3 or _other.shape.dim() >= 3 
+        
+        
+        while _self.shape.dim() < 3: 
             _self.unsqueeze(0)
-        if other.shape.dim() <= 1: 
-            other.unsqueeze(0)
-        if _self.shape.dim() >= 2 and _self.shape[1] != other.shape[0]: 
-            if other.shape[1] == _self.shape[0]: 
-                _self, other = other, _self
+        if _other.shape.dim() < 3: 
+            _other.unsqueeze(0)
+        
+        if _self.shape[2] != _other.shape[1]: 
+            if _other.shape[2] == _self.shape[1]: 
+                _self, _other = _other, _self
             else: 
                 raise ValueError(f"The number of columns in the first matrix must equal the number of rows in the second (found {_self.shape} and {other.shape})")
-        n = _self.shape[0]
-        m = other.shape[0]
-        p = other.shape[1]
-        c = zeros(n, p)
-        for i in range(n): 
-            for j in range(p): 
-                for k in range(m): 
-                    c[i,j] += _self[i,k]*other[k,j]
+        if _self.shape[0] != _other.shape[0] and _self.shape[0] != 1 and _other.shape[0] != 1: 
+            raise ValueError(f"Incompatible batch sizes in batch matmul: {_self.shape[0]} and {_other.shape[0]}")
+        
+        self_batch_1 = _self.shape[0] == 1    # Whether batch size is 1 for each tensor
+        other_batch_1 = _other.shape[0] == 1  # Used to determine whether or not to iterate through batch dimension during loop
+        
+        batch_size = _self.shape[0] if _self.shape[0] > 1 else _other.shape[0]
 
+        n = _self.shape[1]
+        m = _other.shape[1]
+        p = _other.shape[2]
+        c = zeros(batch_size, n, p)
+
+        for b in range(batch_size): 
+            for i in range(n): 
+                for j in range(p): 
+                    for k in range(m): 
+                        c[b, i, j] += _self[(0 if self_batch_1 else b), i, k]*_other[(0 if other_batch_1 else b), k, j]
+        
+        if c.shape[0] == 1 and not has_batch: 
+            c.squeeze(0)
         return c
     
     def __round__(self) -> Self: 
