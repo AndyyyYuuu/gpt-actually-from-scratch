@@ -299,14 +299,13 @@ class Tensor:
                     raise ValueError(f"Tensor of size {self.shape} cannot be expanded to {size}.")
 
     
-def transpose(input: Tensor, dim1: int, dim2: int) -> Tensor: 
-    _enforce_type(input, Tensor)
-    _enforce_type(dim1, int)
-    _enforce_type(dim2, int)
-    output = input.clone()
-    output.shape[dim1], output.shape[dim2] = input.shape[dim2], input.shape[dim1]
-    output.stride[dim1], output.stride[dim2] = input.stride[dim2], input.stride[dim1]
-    return output
+    def transpose(self, dim1: int, dim2: int) -> Self: 
+        _enforce_type(dim1, int)
+        _enforce_type(dim2, int)
+        output = self.clone()
+        output.shape[dim1], output.shape[dim2] = self.shape[dim2], self.shape[dim1]
+        output.stride[dim1], output.stride[dim2] = self.stride[dim2], self.stride[dim1]
+        return output
     
 
 def cat(tensors: tuple[Tensor, ...], dim: int=0): 
