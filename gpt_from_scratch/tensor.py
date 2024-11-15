@@ -73,15 +73,11 @@ class Tensor:
     
     def __repr__(self) -> str: 
         return f"Tensor(shape={self.shape}, data={self.tolist()})"
-    
-    def __eq__(self, other: Self) -> bool: 
-        _enforce_type(other, Tensor)
-        return other.shape == self.shape and all([i==j for i, j in zip(self.data, other.data)])
 
     @staticmethod
-    def elementwise(op: Callable): 
+    def binelementwise(op: Callable): 
         @functools.wraps(op)
-        def _element_wise(t_self: Self, t_other: Self) -> Callable:
+        def _bin_element_wise(t_self: Self, t_other: Self) -> Callable:
             if isinstance(t_other, Tensor) and t_other.shape == Size([]):
                 t_other = t_other[0]
             if isinstance(t_other, (float, int)): 
@@ -119,75 +115,104 @@ class Tensor:
                         _op_tensors(t1, t2, output, index + [i])
             _op_tensors(t_self, t_other, result)
             return result
-        return _element_wise
+        return _bin_element_wise
+    
+    @binelementwise
+    def __eq__(t1: float, t2: float) -> bool:
+        return t1 == t2
 
-    @elementwise
+    @binelementwise
     def __add__(t1: float, t2: float) -> float: 
         return t1 + t2
     
-    @elementwise
+    @binelementwise
     def __radd__(t1: float, t2: float) -> float: 
         return t2 + t1
     
-    @elementwise
+    @binelementwise
     def __mul__(t1: float, t2: float) -> float: 
         return t1 * t2
 
-    @elementwise
+    @binelementwise
     def __rmul__(t1: float, t2: float) -> float: 
         return t2 * t1
     
-    @elementwise
+    @binelementwise
     def __truediv__(t1: float, t2: float) -> float: 
         return t1 / t2
     
-    @elementwise
+    @binelementwise
     def __rtruediv__(t1: float, t2: float) -> float: 
         return t2 / t1
     
-    @elementwise
+    @binelementwise
     def __floordiv__(t1: float, t2: float) -> float: 
         return t1 / t2
     
-    @elementwise
+    @binelementwise
     def __rfloordiv__(t1: float, t2: float) -> float: 
         return t2 / t1
     
-    @elementwise
+    @binelementwise
     def __pow__(t1: float, t2: float) -> float: 
         return t1 ** t2
     
-    @elementwise
+    @binelementwise
     def __rpow__(t1: float, t2: float) -> float: 
         return t2 ** t1
     
-    @elementwise
+    @binelementwise
     def __neg__(t1: float, t2: float) -> float: 
         return t2 ** t1
     
-    @elementwise
+    @binelementwise
     def __lt__(t1: float, t2: float) -> bool: 
         return t1 < t2
     
-    @elementwise
+    @binelementwise
     def __gt__(t1: float, t2: float) -> bool: 
         return t1 > t2
     
-    @elementwise
+    @binelementwise
     def __le__(t1: float, t2: float) -> bool: 
         return t1 >= t2
     
-    @elementwise
+    @binelementwise
     def __ge__(t1: float, t2: float) -> bool: 
         return t1 <= t2
     
-    @elementwise
+    @binelementwise
     def __eq__(t1: float, t2: float) -> bool: 
         return t1 == t2
     
-    @elementwise
+    @binelementwise
     def __ne__(t1: float, t2: float) -> bool: 
         return t1 != t2
+    
+    def all(self):
+        return all(self.data)
+    
+    def max(self): 
+        return max(self.data)
+    
+    @staticmethod
+    def unelementwise(op: Callable): 
+        @functools.wraps(op)
+        def _un_element_wise(t: Self) -> Callable:
+            result = zeros(*t.shape)
+            def _op_tensors(t1, output, index=[]): 
+                if len(index) == t1.shape.dim(): 
+                    output[index] = op(t1[index])
+                else: 
+                    for i in range(t1.shape[len(index)]): 
+                        _op_tensors(t1, output, index + [i])
+            _op_tensors(t, result)
+            return result
+        return _un_element_wise
+    
+    @unelementwise
+    def abs(t: float): 
+        return abs(t)
     
     @staticmethod
     def _data_eq(data1: list, data2: list) -> bool: 
